@@ -6,4 +6,3 @@ Dockerfile
 .idea/
 **/__pycache__/
 mediafiles/
-tests/
