@@ -44,7 +44,8 @@ class ExwonderUser(AbstractBaseUser):
     email = models.EmailField(
         verbose_name=_('Почта'),
         unique=True,
-        help_text=_("Электронная почта для аккаунта.")
+        help_text=_("Электронная почта для аккаунта."),
+        null=True
     )
     avatar = models.ImageField(
         verbose_name=_("Аватарка"),
