@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from environ import Env
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'rest_framework.authtoken',
 
     'users.apps.UsersConfig'
 ]
@@ -116,6 +118,7 @@ AUTH_USER_MODEL = "users.ExwonderUser"
 DEFAULT_USER_TIMEZONE = "Europe/London"
 CUSTOM_USER_AVATARS_DIR = "avatars"
 DEFAULT_USER_AVATAR_PATH = "default-user-icon.jpg"
+TOKEN_EXP_TIME = timedelta(hours=24)
 
 LANGUAGE_CODE = 'en-us'
 

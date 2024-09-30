@@ -35,3 +35,12 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
         instance.save()
         return instance
+
+
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
+class ErrorSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    code = serializers.CharField(max_length=32)

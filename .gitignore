@@ -6,3 +6,4 @@ Dockerfile
 .idea/
 **/__pycache__/
 mediafiles/
+journal.py
