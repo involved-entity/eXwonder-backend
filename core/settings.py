@@ -23,6 +23,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
+    'dj_rest_auth',
 
     'users.apps.UsersConfig'
 ]
@@ -111,6 +112,10 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'eXwonder',
     'DESCRIPTION': '',
     'VERSION': '1.1.0',
+}
+
+REST_AUTH = {
+    "OLD_PASSWORD_FIELD_ENABLED": True
 }
 
 AUTH_USER_MODEL = "users.ExwonderUser"

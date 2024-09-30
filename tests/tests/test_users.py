@@ -4,7 +4,7 @@ import typing
 
 import pytest
 import pytz
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model
 from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -23,6 +23,8 @@ class TestUsers(object):
     endpoint_list = "api:account-list"
     endpoint_detail = "api:account-detail"
     endpoint_login = "api:login"
+    endpoint_password_change = "api:password-change"
+
     tests_count = 2
 
     def __send_endpoint_detail_request(self, client: APIClient, pk: int, status__: int) -> ResponseContent:
@@ -98,3 +100,19 @@ class TestUsers(object):
             response = client.post(reverse_lazy(self.endpoint_login), data=data)
             assert response.status_code == status.HTTP_200_OK
             assert "token" in list(json.loads(response.content).keys())
+
+    def test_user_password_change(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+            -> None:
+        client = api_client()
+        users = self.__register_users(client, user_factory)
+        new_users = self.__get_users_for_test(user_factory, stub=True)
+        for user, new_user in zip(users, new_users):
+            client.force_authenticate(User.objects.get(username=user.username))
+            data = {
+                "old_password": user.password,
+                "new_password1": new_user.password,
+                "new_password2": new_user.password
+            }
+            response = client.post(reverse_lazy(self.endpoint_password_change), data=data)
+            assert response.status_code == status.HTTP_200_OK
+            assert authenticate(username=user.username, password=new_user.password)
