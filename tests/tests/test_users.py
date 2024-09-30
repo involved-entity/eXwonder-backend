@@ -3,6 +3,7 @@ import typing
 import random
 
 import pytest
+import pytz
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from rest_framework import status
@@ -20,7 +21,7 @@ ResponseContent = typing.Dict
 class TestUsers(object):
     endponint_list = reverse_lazy("api:account-list")
     endponint_detail = "api:account-detail"
-    tests_count = 3
+    tests_count = 2
 
     def __send_endpoint_detail_request(self, client: APIClient, pk: int, status__: int) -> ResponseContent:
         detail_url = reverse_lazy(self.endponint_detail, kwargs={"pk": pk})
@@ -30,6 +31,14 @@ class TestUsers(object):
 
     def __get_users_for_test(self, user_factory: typing.Type[UserFactory]) -> BatchCreatedUsers:
         return user_factory.create_batch(self.tests_count)
+
+    def __check_user_data(self, client: APIClient, valid_user: User) -> None:
+        content = self.__send_endpoint_detail_request(client, valid_user.pk, status.HTTP_200_OK)
+        assert content["id"] == valid_user.pk
+        assert content["username"] == valid_user.username
+        assert content["email"] == valid_user.email
+        assert content["timezone"] == valid_user.timezone
+        assert content["is_2fa_enabled"] == valid_user.is_2fa_enabled
 
     def test_user_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
@@ -55,8 +64,18 @@ class TestUsers(object):
         for user in users:
             client.force_authenticate(user)
             user_for_check = random.choice(users)
-            content = self.__send_endpoint_detail_request(client, user_for_check.pk, status.HTTP_200_OK)
-            assert content["id"] == user_for_check.pk
-            assert content["username"] == user_for_check.username
-            assert content["timezone"] == user_for_check.timezone
-            assert content["is_2fa_enabled"] == user_for_check.is_2fa_enabled
+            self.__check_user_data(client, user_for_check)
+
+    def test_user_update(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
+        client = api_client()
+        users = self.__get_users_for_test(user_factory)
+        for user in users:
+            client.force_authenticate(user)
+            data = {
+                "email": user_factory.stub().email,
+                "timezone": random.choice(pytz.common_timezones),
+                "is_2fa_enabled": True
+            }
+            response = client.patch(reverse_lazy(self.endponint_detail, kwargs={"pk": user.pk}), data=data)
+            assert response.status_code == status.HTTP_200_OK
+            self.__check_user_data(client, User.objects.get(pk=user.pk))

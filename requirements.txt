@@ -10,3 +10,4 @@ ruff==0.6.8
 pytest==8.3.3
 pytest-factoryboy==2.7.0
 pytest-django==4.9.0
+pytz==2024.2

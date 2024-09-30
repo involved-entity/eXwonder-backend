@@ -27,3 +27,11 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data["password"])
         user.save()
         return user
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get("email", instance.email)
+        instance.avatar = validated_data.get("avatar", instance.avatar)
+        instance.timezone = validated_data.get("timezone", instance.timezone)
+        instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
+        instance.save()
+        return instance
