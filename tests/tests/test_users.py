@@ -9,13 +9,12 @@ from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from tests import get_users_for_test, register_users
 from tests.factories import UserFactory
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
 
-BatchCreateUsers = typing.List
-BatchStubUsers = typing.List
 ResponseContent = typing.Dict
 
 
@@ -33,10 +32,6 @@ class TestUsers(object):
         assert response.status_code == status__
         return json.loads(response.content)
 
-    def __get_users_for_test(self, user_factory: typing.Type[UserFactory], stub: bool = False) \
-            -> BatchCreateUsers | BatchStubUsers:
-        return user_factory.create_batch(self.tests_count) if not stub else user_factory.stub_batch(self.tests_count)
-
     def __check_user_data(self, client: APIClient, valid_user: User) -> None:
         content = self.__send_endpoint_detail_request(client, valid_user.pk, status.HTTP_200_OK)
         assert content["id"] == valid_user.pk
@@ -45,31 +40,19 @@ class TestUsers(object):
         assert content["timezone"] == valid_user.timezone
         assert content["is_2fa_enabled"] == valid_user.is_2fa_enabled
 
-    def __register_users(self, client: APIClient, user_factory: typing.Type[UserFactory]) -> BatchStubUsers:
-        users_data = self.__get_users_for_test(user_factory, stub=True)
-        for user_data in users_data:
-            data = {
-                "username": user_data.username,
-                "email": user_data.email,
-                "password": user_data.password,
-            }
-            response = client.post(reverse_lazy(self.endpoint_list), data=data)
-            assert response.status_code == status.HTTP_201_CREATED
-        return users_data
-
     def test_user_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
-        self.__register_users(client, user_factory)
+        register_users(client, user_factory, self.tests_count)
 
     def test_user_permissions(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
-        users = self.__get_users_for_test(user_factory)
+        users = get_users_for_test(user_factory, self.tests_count)
         for user in users:
             self.__send_endpoint_detail_request(client, user.pk, status.HTTP_403_FORBIDDEN)
 
     def test_user_retrive(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
-        users = self.__get_users_for_test(user_factory)
+        users = get_users_for_test(user_factory, self.tests_count)
         for user in users:
             client.force_authenticate(user)
             user_for_check = random.choice(users)
@@ -77,7 +60,7 @@ class TestUsers(object):
 
     def test_user_update(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
-        users = self.__get_users_for_test(user_factory)
+        users = get_users_for_test(user_factory, self.tests_count)
         for user in users:
             client.force_authenticate(user)
             data = {
@@ -91,7 +74,7 @@ class TestUsers(object):
 
     def test_user_login(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
         client = api_client()
-        users = self.__register_users(client, user_factory)
+        users = register_users(client, user_factory, self.tests_count)
         for user in users:
             data = {
                 "username": user.username,
@@ -104,8 +87,8 @@ class TestUsers(object):
     def test_user_password_change(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
             -> None:
         client = api_client()
-        users = self.__register_users(client, user_factory)
-        new_users = self.__get_users_for_test(user_factory, stub=True)
+        users = register_users(client, user_factory, self.tests_count)
+        new_users = get_users_for_test(user_factory, self.tests_count, stub=True)
         for user, new_user in zip(users, new_users):
             client.force_authenticate(User.objects.get(username=user.username))
             data = {

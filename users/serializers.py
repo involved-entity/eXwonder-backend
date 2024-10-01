@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from users.forms import PasswordResetForm
+from users.models import Follow
 
 User = get_user_model()
 
@@ -54,6 +55,41 @@ class PasswordResetSerializer(PasswordResetSerializerCore):
         return PasswordResetForm
 
 
+class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
+    auth_code = serializers.CharField(
+        max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
+        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
+    )
+
+
+class FollowsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = "follower",
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = "following",
+
+    def validate(self, attrs):
+        following = attrs.get("following", 0)
+
+        if not following:
+            raise serializers.ValidationError("User is not defined.")
+        return attrs
+
+    def create(self, validated_data):
+        follower = validated_data["follower"]
+        following = validated_data["following"]
+        exists = Follow.objects.filter(follower=follower, following=following).count()   # noqa
+
+        if not exists:
+            return Follow.objects.create(follower=follower, following=following)   # noqa
+        return Follow.objects.get(follower=follower, following=following)   # noqa
+
+
 class TokenSerializer(serializers.Serializer):
     token = serializers.CharField()
 
@@ -61,10 +97,3 @@ class TokenSerializer(serializers.Serializer):
 class DetailedCodeSerializer(serializers.Serializer):
     detail = serializers.CharField()
     code = serializers.CharField(max_length=32)
-
-
-class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
-    auth_code = serializers.CharField(
-        max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
-        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
-    )

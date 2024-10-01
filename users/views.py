@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -10,12 +10,14 @@ from rest_framework.response import Response
 from users.permissions import UserPermission
 from users.serializers import (
     DetailedCodeSerializer,
+    FollowSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserSerializer,
 )
 from users.services import get_user_login_token, make_2fa_authentication
 from users.tasks import send_2fa_code_mail_message
+from users.models import Follow
 
 User = get_user_model()
 
@@ -84,3 +86,32 @@ class UserViewSet(
             "detail": "This 2FA code is invalid. May be it has been expired, so regenerate a code.",
             "code": "CODE_INVALID"
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowsViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = FollowSerializer
+    permission_classes = permissions.IsAuthenticated,
+
+    def get_queryset(self):
+        return self.request.user.following
+
+    def perform_create(self, serializer):
+        serializer.save(follower=self.request.user)
+
+    @action(methods=["delete"], detail=False, url_name="disfollow")
+    def disfollow(self, request: Request) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        following = serializer.validated_data["following"]
+        follow = Follow.objects.filter(follower=request.user, following=following)   # noqa
+
+        if follow.exists():
+            follow.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
