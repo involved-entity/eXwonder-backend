@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from tests import register_users
+from tests import FollowTestMode, FollowTestService, register_users
 from tests.factories import UserFactory
 
 User = get_user_model()
@@ -22,6 +22,7 @@ class TestFollows(object):
     endpoint_disfollow = "api:follows-disfollow"
 
     tests_count = 2
+    list_tests_count = 5
 
     def __get_registered_user_objects(self, client: APIClient, user_factory: typing.Type[UserFactory]) \
             -> typing.List[User]:
@@ -63,3 +64,14 @@ class TestFollows(object):
 
         for follower in [relation[0] for relation in relations]:
             assert follower.followers.count() == 0 and follower.following.count() == 0
+
+    def test_follows_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
+        client = api_client()
+        service = FollowTestService(
+            self.endpoint_list,
+            self.endpoint_list,
+            self.list_tests_count,
+            FollowTestMode.FOLLOWINGS
+        )
+        for _ in range(self.tests_count):
+            service.make_follow_test(client, user_factory)
