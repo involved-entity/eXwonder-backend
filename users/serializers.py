@@ -58,6 +58,13 @@ class TokenSerializer(serializers.Serializer):
     token = serializers.CharField()
 
 
-class ErrorSerializer(serializers.Serializer):
+class DetailedCodeSerializer(serializers.Serializer):
     detail = serializers.CharField()
     code = serializers.CharField(max_length=32)
+
+
+class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
+    auth_code = serializers.CharField(
+        max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
+        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
+    )
