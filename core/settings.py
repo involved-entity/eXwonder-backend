@@ -115,7 +115,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 REST_AUTH = {
-    "OLD_PASSWORD_FIELD_ENABLED": True
+    "OLD_PASSWORD_FIELD_ENABLED": True,
+    "PASSWORD_RESET_SERIALIZER": "users.serializers.PasswordResetSerializer",
 }
 
 AUTH_USER_MODEL = "users.ExwonderUser"
@@ -124,6 +125,18 @@ DEFAULT_USER_TIMEZONE = "Europe/London"
 CUSTOM_USER_AVATARS_DIR = "avatars"
 DEFAULT_USER_AVATAR_PATH = "default-user-icon.jpg"
 TOKEN_EXP_TIME = timedelta(hours=24)
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = "noreply@exwonder"
+
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
+
 
 LANGUAGE_CODE = 'en-us'
 

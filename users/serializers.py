@@ -1,6 +1,11 @@
+import typing
+
+from dj_rest_auth.serializers import PasswordResetSerializer as PasswordResetSerializerCore
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
+from users.forms import PasswordResetForm
 
 User = get_user_model()
 
@@ -35,6 +40,18 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
         instance.save()
         return instance
+
+
+class PasswordResetSerializer(PasswordResetSerializerCore):
+    def get_email_options(self) -> typing.Dict:
+        return {
+            "subject_template_name": 'users/mails/reset_password_body.html',
+            "email_template_name": 'users/mails/reset_password_subject.html'
+        }
+
+    @property
+    def password_reset_form_class(self) -> typing.Type[PasswordResetForm]:
+        return PasswordResetForm
 
 
 class TokenSerializer(serializers.Serializer):
