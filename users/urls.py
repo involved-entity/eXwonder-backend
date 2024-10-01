@@ -2,13 +2,14 @@ from dj_rest_auth.views import PasswordChangeView, PasswordResetConfirmView, Pas
 from django.urls import include, path
 from rest_framework import routers
 
-from users.views import FollowsViewSet, UserViewSet
+from users.views import FollowersViewSet, FollowsViewSet, UserViewSet
 
 app_name = "api"
 
 router = routers.SimpleRouter()
 router.register(r"account", UserViewSet, basename="account")
 router.register(r"follows", FollowsViewSet, basename="follows")
+router.register(r"followers", FollowersViewSet, basename="followers")
 
 urlpatterns = [
     path("", include(router.urls)),

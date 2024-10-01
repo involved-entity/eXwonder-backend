@@ -7,17 +7,18 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from users.models import Follow
 from users.permissions import UserPermission
 from users.serializers import (
     DetailedCodeSerializer,
     FollowSerializer,
+    FollowsSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserSerializer,
 )
 from users.services import get_user_login_token, make_2fa_authentication
 from users.tasks import send_2fa_code_mail_message
-from users.models import Follow
 
 User = get_user_model()
 
@@ -98,7 +99,7 @@ class FollowsViewSet(
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.following
+        return self.request.user.following.filter()
 
     def perform_create(self, serializer):
         serializer.save(follower=self.request.user)
@@ -115,3 +116,14 @@ class FollowsViewSet(
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowersViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = FollowsSerializer
+    permission_classes = permissions.IsAuthenticated,
+
+    def get_queryset(self):
+        return self.request.user.followers.filter()

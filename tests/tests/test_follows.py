@@ -1,15 +1,14 @@
-import typing
-import json   # noqa
-
 import random
+import typing
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from tests.factories import UserFactory
 from tests import register_users
+from tests.factories import UserFactory
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
