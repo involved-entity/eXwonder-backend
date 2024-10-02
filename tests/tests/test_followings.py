@@ -18,8 +18,9 @@ UsersWithFollowsRelations = typing.List[typing.Tuple[UserFollower, UserFollowing
 
 
 class TestFollows(object):
-    endpoint_list = "api:follows-list"
-    endpoint_disfollow = "api:follows-disfollow"
+    endpoint_list = "api:followings-list"
+    endpoint_disfollow = "api:followings-disfollow"
+    endpoint_user = "api:followings-user"
 
     tests_count = 2
     list_tests_count = 5
@@ -47,11 +48,12 @@ class TestFollows(object):
 
         return relations   # noqa
 
-    def test_follows_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
+    def test_followings_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+            -> None:
         client = api_client()
         self.__get_users_with_follows_relations(client, user_factory)
 
-    def test_follows_disfollow(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+    def test_followings_disfollow(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
             -> None:
         client = api_client()
         relations = self.__get_users_with_follows_relations(client, user_factory)
@@ -65,13 +67,26 @@ class TestFollows(object):
         for follower in [relation[0] for relation in relations]:
             assert follower.followers.count() == 0 and follower.following.count() == 0
 
-    def test_follows_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
+    def test_followings_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+            -> None:
         client = api_client()
         service = FollowTestService(
             self.endpoint_list,
             self.endpoint_list,
             self.list_tests_count,
             FollowTestMode.FOLLOWINGS
+        )
+        for _ in range(self.tests_count):
+            service.make_follow_test(client, user_factory)
+
+    def test_followings_of_each_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+            -> None:
+        client = api_client()
+        service = FollowTestService(
+            self.endpoint_list,
+            self.endpoint_user,
+            self.list_tests_count,
+            FollowTestMode.FOLLOWINGS_EACH_USER
         )
         for _ in range(self.tests_count):
             service.make_follow_test(client, user_factory)

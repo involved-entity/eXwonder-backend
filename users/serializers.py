@@ -62,13 +62,13 @@ class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
     )
 
 
-class FollowsSerializer(serializers.ModelSerializer):
+class FollowerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "follower",
 
 
-class FollowSerializer(serializers.ModelSerializer):
+class FollowingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "following",

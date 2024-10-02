@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -11,8 +11,8 @@ from users.models import Follow
 from users.permissions import UserPermission
 from users.serializers import (
     DetailedCodeSerializer,
-    FollowSerializer,
-    FollowsSerializer,
+    FollowerSerializer,
+    FollowingSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserSerializer,
@@ -89,17 +89,17 @@ class UserViewSet(
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class FollowsViewSet(
+class FollowingsViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
-    serializer_class = FollowSerializer
+    serializer_class = FollowingSerializer
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.following.filter()
+        user = self.request.user
+        return user.following.filter()
 
     def perform_create(self, serializer):
         serializer.save(follower=self.request.user)
@@ -118,11 +118,20 @@ class FollowsViewSet(
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+class FollowingsUserAPIView(generics.ListAPIView):
+    serializer_class = FollowingSerializer
+    lookup_url_kwarg = "pk"
+
+    def get_queryset(self):
+        user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
+        return user.following.filter()
+
+
 class FollowersViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
-    serializer_class = FollowsSerializer
+    serializer_class = FollowerSerializer
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):

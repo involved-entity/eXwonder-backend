@@ -77,3 +77,6 @@ class ExwonderUser(AbstractBaseUser):
 class Follow(models.Model):
     follower = models.ForeignKey(ExwonderUser, related_name="following", on_delete=models.CASCADE)
     following = models.ForeignKey(ExwonderUser, related_name="followers", on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = "-pk",
