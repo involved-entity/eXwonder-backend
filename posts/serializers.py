@@ -16,7 +16,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = "signature", "time_added", "images"
+        fields = "id", "signature", "time_added", "images"
         extra_kwargs = {
             "time_added": {"read_only": True}
         }
@@ -28,11 +28,10 @@ class PostSerializer(serializers.ModelSerializer):
         )
         post.save()
 
-        images = self.context["request"].FILES.getlist("image")
-
-        for image in list(images):
-            post_image = PostImage(image=image, post=post)
-            post_image.save()
+        for key, value in self.context["request"].data.items():
+            if key.startswith("image"):
+                post_image = PostImage(image=value, post=post)
+                post_image.save()
 
         return post
 

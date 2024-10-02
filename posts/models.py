@@ -20,6 +20,9 @@ class Post(models.Model):
     signature = models.CharField(max_length=512, default="")
     time_added = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = "-id",
+
 
 class Like(models.Model):
     author = models.ForeignKey(User, related_name="likes", on_delete=models.CASCADE)
