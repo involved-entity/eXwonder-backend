@@ -18,9 +18,9 @@ UsersWithFollowsRelations = typing.List[typing.Tuple[UserFollower, UserFollowing
 
 
 class TestFollows(object):
-    endpoint_list = "api:followings-list"
-    endpoint_disfollow = "api:followings-disfollow"
-    endpoint_user = "api:followings-user"
+    endpoint_list = "users:followings-list"
+    endpoint_disfollow = "users:followings-disfollow"
+    endpoint_user = "users:followings-user"
 
     tests_count = 2
     list_tests_count = 5

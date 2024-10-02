@@ -19,10 +19,10 @@ ResponseContent = typing.Dict
 
 
 class TestUsers(object):
-    endpoint_list = "api:account-list"
-    endpoint_detail = "api:account-detail"
-    endpoint_login = "api:account-login"
-    endpoint_password_change = "api:password-change"
+    endpoint_list = "users:account-list"
+    endpoint_detail = "users:account-detail"
+    endpoint_login = "users:account-login"
+    endpoint_password_change = "users:password-change"
 
     tests_count = 2
 

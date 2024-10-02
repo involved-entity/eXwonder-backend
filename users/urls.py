@@ -4,7 +4,7 @@ from rest_framework import routers
 
 from users.views import FollowersViewSet, FollowingsUserAPIView, FollowingsViewSet, UserViewSet
 
-app_name = "api"
+app_name = "users"
 
 router = routers.SimpleRouter()
 router.register(r"account", UserViewSet, basename="account")

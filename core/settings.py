@@ -25,7 +25,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'dj_rest_auth',
 
-    'users.apps.UsersConfig'
+    'users.apps.UsersConfig',
+    'posts.apps.PostsConfig'
 ]
 
 MIDDLEWARE = [
@@ -122,8 +123,12 @@ REST_AUTH = {
 AUTH_USER_MODEL = "users.ExwonderUser"
 
 DEFAULT_USER_TIMEZONE = "Europe/London"
-CUSTOM_USER_AVATARS_DIR = "avatars"
 DEFAULT_USER_AVATAR_PATH = "default-user-icon.jpg"
+
+CUSTOM_USER_AVATARS_DIR = "avatars"
+POSTS_IMAGES_DIR = "posts_images"
+TEST_IMAGES_DIR = "test_images"
+
 TOKEN_EXP_TIME = timedelta(hours=24)
 TWO_FACTOR_AUTHENTICATION_CODE_LENGTH = 5
 TWO_FACTOR_AUTHENTICATION_CODE_LIVETIME = 60 * 10   # seconds
@@ -133,12 +138,10 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-
 DEFAULT_FROM_EMAIL = "noreply@exwonder"
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
-
 
 LANGUAGE_CODE = 'en-us'
 

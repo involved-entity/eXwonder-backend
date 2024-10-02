@@ -13,7 +13,7 @@ User = get_user_model()
 BatchCreateUsers = typing.List
 BatchStubUsers = typing.List
 
-REGISTER_USERS_ENDPOINT = "api:account-list"
+REGISTER_USERS_ENDPOINT = "users:account-list"
 
 
 class FollowTestMode(StrEnum):
