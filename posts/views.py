@@ -17,6 +17,7 @@ class PostViewSet(
 ):
     serializer_class = PostSerializer
     permission_classes = (permissions.IsAuthenticated, PostPermission)
+    lookup_url_kwarg = "id"
 
     def get_queryset(self):
         user = self.request.query_params.get("user", 0)

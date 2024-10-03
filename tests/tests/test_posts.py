@@ -9,12 +9,13 @@ import os
 from rest_framework.test import APIClient
 from django.conf import settings
 
-from posts.models import Post, PostImage
+from posts.models import Post
 from tests import register_users
 from tests.factories import UserFactory, PostFactory
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
+PostSignature = str
 
 IMAGES_FOR_TEST_NAMES = [
     "image_1.jpeg",
@@ -24,11 +25,12 @@ IMAGES_FOR_TEST_NAMES = [
 
 class TestPosts(object):
     endpoint_list = "posts:posts-list"
+    endpoint_detail = "posts:posts-detail"
 
     tests_count = 2
     list_tests_count = 2
 
-    def __create_and_assert_post(self, client: APIClient, post_factory: typing.Type[PostFactory], author: User) -> None:
+    def __create_and_assert_post(self, client: APIClient, post_factory: typing.Type[PostFactory], author: User) -> PostSignature:
         client.force_authenticate(author)
         data = {
             "signature": post_factory.stub().signature,
@@ -42,6 +44,7 @@ class TestPosts(object):
                 response = client.post(reverse_lazy(self.endpoint_list), data=data)
                 assert response.status_code == status.HTTP_201_CREATED
         client.force_authenticate()
+        return data["signature"]
 
     def test_posts_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
                             post_factory: typing.Type[PostFactory]) -> None:
@@ -71,3 +74,19 @@ class TestPosts(object):
             assert len(content["results"]) == self.list_tests_count
             for post in content["results"]:
                 assert len(post["images"]) == 2
+
+    def test_posts_retrieve(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
+                            post_factory: typing.Type[PostFactory]) -> None:
+        client = api_client()
+        users = register_users(client, user_factory, self.tests_count)
+
+        for user in users:
+            user = User.objects.get(username=user.username)
+            signature = self.__create_and_assert_post(client, post_factory, user)
+            post = Post.objects.filter()[0]
+            client.force_authenticate(user)
+            response = client.get(reverse_lazy(self.endpoint_detail, kwargs={"id": post.id}))
+            content = json.loads(response.content)
+            assert response.status_code == status.HTTP_200_OK
+            assert content["id"] == post.id
+            assert content["signature"] == signature

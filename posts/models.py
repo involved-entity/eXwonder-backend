@@ -21,7 +21,7 @@ class Post(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-id",
+        ordering = "-time_added",
 
 
 class Like(models.Model):
