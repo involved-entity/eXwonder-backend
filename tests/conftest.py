@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from tests.factories import PostFactory, UserFactory
+from tests.factories import PostFactory, UserFactory, CommentFactory
 
 User = get_user_model()
 
@@ -22,3 +22,8 @@ def api_client() -> typing.Type[APIClient]:
 @pytest.fixture(scope="session")
 def post_factory() -> typing.Type[PostFactory]:
     return PostFactory
+
+
+@pytest.fixture(scope="session")
+def comment_factory() -> typing.Type[CommentFactory]:
+    return CommentFactory

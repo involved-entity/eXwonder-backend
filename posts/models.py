@@ -43,5 +43,8 @@ class Comment(models.Model):
     comment = models.TextField(max_length=2048, validators=(MinLengthValidator(10),))
     post = models.ForeignKey(Post, related_name="comments", on_delete=models.CASCADE)
 
+    class Meta:
+        ordering = "-id",
+
     def __str__(self):
         return f"{self.author.pk} comment for {self.post.pk}."   # noqa

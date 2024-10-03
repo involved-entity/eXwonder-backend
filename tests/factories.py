@@ -2,7 +2,7 @@ import factory
 import faker
 from django.contrib.auth import get_user_model
 
-from posts.models import Post
+from posts.models import Post, Comment
 
 User = get_user_model()
 
@@ -22,3 +22,10 @@ class PostFactory(factory.django.DjangoModelFactory):
         model = Post
 
     signature = factory.LazyFunction(lambda: faker.Faker().user_name())
+
+
+class CommentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Comment
+
+    comment = factory.LazyFunction(lambda: faker.Faker().text(max_nb_chars=1024))

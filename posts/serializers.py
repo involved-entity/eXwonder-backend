@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from posts.models import Like, Post, PostImage
+from posts.models import Like, Post, PostImage, Comment
 from posts.services import datetime_to_timezone
 
 
@@ -43,17 +43,24 @@ class PostSerializer(serializers.ModelSerializer):
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
-        fields = "author", "post"
+        fields = "id", "author", "post"
         extra_kwargs = {
             "author": {"read_only": True},
             "post": {"read_only": True}
         }
 
     def create(self, validated_data):
-        like = Like(
-            author=validated_data["author"],
-            post=validated_data["post"]
-        )
-        like.save()
+        like = Like.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
+        if like.exists():
+            return like.first()
+        return super().create(validated_data)
 
-        return like
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = "id", "author", "post", "comment"
+        extra_kwargs = {
+            "author": {"read_only": True},
+            "post": {"read_only": True}
+        }

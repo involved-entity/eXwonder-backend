@@ -20,12 +20,17 @@ class TestLikes(object):
     endpoint_detail = "posts:likes-detail"
 
     tests_count = 2
+    list_test_count = 5
 
-    def __make_like(self, client: APIClient, post_factory: typing.Type[PostFactory], author: User) -> typing.Tuple[User, int]:
+    def __make_like(self, client: APIClient, post_or_factory: typing.Type[PostFactory] | Post,
+                    author: User) -> typing.Tuple[User, int]:
         user = User.objects.get(username=author.username)
-        signature = register_post(client, post_factory, user)
-        post_id = Post.objects.get(signature=signature).id   # noqa
-        data = {"id": post_id}
+        if post_or_factory.__class__ == Post:
+            post_id = post_or_factory.pk
+        elif post_or_factory == PostFactory:
+            signature = register_post(client, post_or_factory, user)
+            post_id = Post.objects.get(signature=signature).id   # noqa
+        data = {"post_id": post_id}   # noqa
         client.force_authenticate(user)
         response = client.post(reverse_lazy(self.endpoint_list), data=data)
         assert response.status_code == status.HTTP_201_CREATED
@@ -48,6 +53,22 @@ class TestLikes(object):
         for user in users:
             user, post_id = self.__make_like(client, post_factory, user)
             client.force_authenticate(user)
-            response = client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))
+            response = client.delete(reverse_lazy(self.endpoint_detail, kwargs={"post_id": post_id}))
             assert response.status_code == status.HTTP_204_NO_CONTENT
             assert Like.objects.filter().count() == 0   # noqa
+
+    def test_likes_count(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
+                         post_factory: typing.Type[PostFactory]) -> None:
+        client = api_client()
+        users = register_users(client, user_factory, self.tests_count)
+
+        for user in users:
+            user = User.objects.get(username=user.username)
+            signature = register_post(client, post_factory, user)
+            post = Post.objects.get(signature=signature)   # noqa
+            for liker in register_users(client, user_factory, self.list_test_count):
+                self.__make_like(client, post, liker)
+            client.force_authenticate(user)
+            response = client.get(reverse_lazy(self.endpoint_detail, kwargs={"post_id": post.id}))   # noqa
+            assert response.status_code == status.HTTP_200_OK
+            assert json.loads(response.content)["count"] == self.list_test_count
