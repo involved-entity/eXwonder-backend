@@ -4,7 +4,7 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from posts.models import Post
+from posts.models import Post, Like
 from posts.permissions import PostPermission
 from posts.serializers import LikeSerializer, PostSerializer
 
@@ -38,6 +38,7 @@ class LikeViewSet(
     viewsets.GenericViewSet
 ):
     serializer_class = LikeSerializer
+    queryset = Like.objects.filter()   # noqa
     permission_classes = permissions.IsAuthenticated,
     lookup_url_kwarg = "id"
 

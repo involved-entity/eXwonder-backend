@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from posts.models import Post
+from posts.models import Post, Like
 from tests import register_post, register_users
 from tests.factories import PostFactory, UserFactory
 
@@ -17,8 +17,20 @@ pytestmark = [pytest.mark.django_db]
 
 class TestLikes(object):
     endpoint_list = "posts:likes-list"
+    endpoint_detail = "posts:likes-detail"
 
     tests_count = 2
+
+    def __make_like(self, client: APIClient, post_factory: typing.Type[PostFactory], author: User) -> typing.Tuple[User, int]:
+        user = User.objects.get(username=author.username)
+        signature = register_post(client, post_factory, user)
+        post_id = Post.objects.get(signature=signature).id   # noqa
+        data = {"id": post_id}
+        client.force_authenticate(user)
+        response = client.post(reverse_lazy(self.endpoint_list), data=data)
+        assert response.status_code == status.HTTP_201_CREATED
+        client.force_authenticate()
+        return user, post_id
 
     def test_likes_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
                             post_factory: typing.Type[PostFactory]) -> None:
@@ -26,9 +38,16 @@ class TestLikes(object):
         users = register_users(client, user_factory, self.tests_count)
 
         for user in users:
-            user = User.objects.get(username=user.username)
-            signature = register_post(client, post_factory, user)
-            data = {"id": Post.objects.get(signature=signature).id}   # noqa
+            self.__make_like(client, post_factory, user)
+
+    def test_likes_delete(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
+                          post_factory: typing.Type[PostFactory]) -> None:
+        client = api_client()
+        users = register_users(client, user_factory, self.tests_count)
+
+        for user in users:
+            user, post_id = self.__make_like(client, post_factory, user)
             client.force_authenticate(user)
-            response = client.post(reverse_lazy(self.endpoint_list), data=data)
-            assert response.status_code == status.HTTP_201_CREATED
+            response = client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            assert Like.objects.filter().count() == 0   # noqa
