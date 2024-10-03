@@ -1,19 +1,27 @@
 import json
+import os
 import typing
 from enum import StrEnum
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from tests.factories import UserFactory
+from tests.factories import PostFactory, UserFactory
 
 User = get_user_model()
 BatchCreateUsers = typing.List
 BatchStubUsers = typing.List
+PostSignature = str
 
+IMAGES_FOR_TEST_NAMES = [
+    "image_1.jpeg",
+    "image_2.jpg"
+]
 REGISTER_USERS_ENDPOINT = "users:account-list"
+REGISTER_POSTS_ENDPOINT = "posts:posts-list"
 
 
 class FollowTestMode(StrEnum):
@@ -94,3 +102,21 @@ def register_users(client: APIClient, user_factory: typing.Type[UserFactory], us
         response = client.post(reverse_lazy(REGISTER_USERS_ENDPOINT), data=data)
         assert response.status_code == status.HTTP_201_CREATED
     return users_data
+
+
+def register_post(client: APIClient, post_factory: typing.Type[PostFactory], author: User) \
+        -> PostSignature:
+    client.force_authenticate(author)
+    data = {
+        "signature": post_factory.stub().signature,
+    }
+    image_1 = os.path.join(settings.STATICFILES_DIRS[0], settings.TEST_IMAGES_DIR, IMAGES_FOR_TEST_NAMES[0])
+    image_2 = os.path.join(settings.STATICFILES_DIRS[0], settings.TEST_IMAGES_DIR, IMAGES_FOR_TEST_NAMES[1])
+    with open(image_1, "rb") as image_1:
+        with open(image_2, "rb") as image_2:
+            data["image1"] = image_1
+            data["image2"] = image_2
+            response = client.post(reverse_lazy(REGISTER_POSTS_ENDPOINT), data=data)
+            assert response.status_code == status.HTTP_201_CREATED
+    client.force_authenticate()
+    return data["signature"]

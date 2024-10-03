@@ -80,3 +80,6 @@ class Follow(models.Model):
 
     class Meta:
         ordering = "-pk",
+
+    def __str__(self):
+        return f"{self.follower.pk} following for {self.following.pk}"   # noqa

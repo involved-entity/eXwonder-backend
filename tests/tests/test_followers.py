@@ -18,7 +18,8 @@ class TestFollowers(object):
     tests_count = 2
     list_tests_count = 5
 
-    def test_followers_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) -> None:
+    def test_followers_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
+            -> None:
         client = api_client()
         service = FollowTestService(
             self.endpoint_follow,
