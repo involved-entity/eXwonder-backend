@@ -17,7 +17,7 @@ UserFollower = UserFollowing = User
 UsersWithFollowsRelations = typing.List[typing.Tuple[UserFollower, UserFollowing]]
 
 
-class TestFollows(object):
+class TestFollowings(object):
     endpoint_list = "users:followings-list"
     endpoint_disfollow = "users:followings-disfollow"
     endpoint_user = "users:followings-user"

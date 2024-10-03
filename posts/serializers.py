@@ -16,9 +16,10 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = "id", "signature", "time_added", "images"
+        fields = "id", "author", "signature", "time_added", "images"
         extra_kwargs = {
-            "time_added": {"read_only": True}
+            "time_added": {"read_only": True},
+            "author": {"read_only": True},
         }
 
     def create(self, validated_data):

@@ -31,5 +31,4 @@ class TestLikes(object):
             data = {"id": Post.objects.get(signature=signature).id}   # noqa
             client.force_authenticate(user)
             response = client.post(reverse_lazy(self.endpoint_list), data=data)
-            print(json.loads(response.content))
             assert response.status_code == status.HTTP_201_CREATED
