@@ -90,3 +90,19 @@ class TestPosts(object):
             assert response.status_code == status.HTTP_200_OK
             assert content["id"] == post.id
             assert content["signature"] == signature
+
+    def test_posts_delete(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
+                          post_factory: typing.Type[PostFactory]) -> None:
+        client = api_client()
+        users = register_users(client, user_factory, self.tests_count)
+
+        for user in users:
+            user = User.objects.get(username=user.username)
+            signature = self.__create_and_assert_post(client, post_factory, user)
+            post = Post.objects.filter()[0]
+            client.force_authenticate(user)
+            assert post.signature == signature
+            response = client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post.id}))
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            posts = Post.objects.filter().count()
+            assert posts == 0
