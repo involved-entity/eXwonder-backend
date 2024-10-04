@@ -14,10 +14,13 @@ User = get_user_model()
 
 
 class CreateModelCustomMixin(mixins.CreateModelMixin):
-    def create(self, request: Request, *args, **kwargs) -> Response:
+    def __get_and_validate_post_id(self, request: Request) -> int:
         serializer = PostIDSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        post_id = serializer.validated_data["post_id"]
+        return serializer.validated_data["post_id"]
+
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        post_id = self.__get_and_validate_post_id(request)
         serializer = self.get_serializer(data=request.data)   # noqa
         serializer.is_valid(raise_exception=True)
         serializer.save(

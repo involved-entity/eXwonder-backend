@@ -19,20 +19,30 @@ def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Opt
 class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostImage
-        fields = "image",
+        fields = "id", "image"
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "image": {"read_only": True}
+        }
 
 
 class PostSerializer(serializers.ModelSerializer):
     images = PostImageSerializer(many=True, read_only=True)
-    time_added = serializers.SerializerMethodField()
+    time_added = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Post
         fields = "id", "author", "signature", "time_added", "images"
         extra_kwargs = {
-            "time_added": {"read_only": True},
+            "id": {"read_only": True},
             "author": {"read_only": True},
         }
+
+    def validate(self, attrs):
+        for key, value in self.context["request"].data.items():
+            if key.startswith("image"):
+                return attrs
+        raise serializers.ValidationError("Images are none.", code="invalid")
 
     def create(self, validated_data):
         post = Post(
@@ -57,6 +67,7 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = "id", "author", "post"
         extra_kwargs = {
+            "id": {"read_only": True},
             "author": {"read_only": True},
             "post": {"read_only": True}
         }
@@ -73,6 +84,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = "id", "author", "post", "comment"
         extra_kwargs = {
+            "id": {"read_only": True},
             "author": {"read_only": True},
             "post": {"read_only": True}
         }

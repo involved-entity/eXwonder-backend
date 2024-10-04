@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.django_db]
 
 class TestFollowers(object):
     endpoint_follow = "users:followings-list"
-    endpoint_list = "users:followers-list"
+    endpoint_list = "users:followers"
 
     tests_count = 2
     list_tests_count = 5

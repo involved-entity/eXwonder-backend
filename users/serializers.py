@@ -65,29 +65,35 @@ class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
 class FollowerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
-        fields = "follower",
+        fields = "id", "follower"
+        extra_kwargs = {
+            "id": {"read_only": True}
+        }
 
 
 class FollowingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
-        fields = "following",
+        fields = "id", "following"
+        extra_kwargs = {
+            "id": {"read_only": True}
+        }
 
     def validate(self, attrs):
         following = attrs.get("following", 0)
 
         if not following:
-            raise serializers.ValidationError("User is not defined.")
+            raise serializers.ValidationError("User is not defined.", code="invalid")
         return attrs
 
     def create(self, validated_data):
         follower = validated_data["follower"]
         following = validated_data["following"]
-        exists = Follow.objects.filter(follower=follower, following=following).count()   # noqa
+        filter = Follow.objects.filter(follower=follower, following=following)   # noqa
 
-        if not exists:
+        if not filter.exists():
             return Follow.objects.create(follower=follower, following=following)   # noqa
-        return Follow.objects.get(follower=follower, following=following)   # noqa
+        return filter.first()
 
 
 class TokenSerializer(serializers.Serializer):

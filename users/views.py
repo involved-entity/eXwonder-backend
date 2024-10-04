@@ -150,7 +150,7 @@ class FollowingsUserAPIView(generics.ListAPIView):
         status.HTTP_200_OK: FollowingSerializer,
     })
 )
-class FollowersViewSet(generics.ListAPIView):
+class FollowersAPIView(generics.ListAPIView):
     serializer_class = FollowerSerializer
     permission_classes = permissions.IsAuthenticated,
 
