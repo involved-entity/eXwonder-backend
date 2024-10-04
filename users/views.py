@@ -28,6 +28,15 @@ User = get_user_model()
     update=extend_schema(request=UserSerializer),
     retrieve=extend_schema(request=None, responses={
         status.HTTP_200_OK: UserSerializer
+    }),
+    login=extend_schema(request=AuthTokenSerializer, responses={
+        status.HTTP_200_OK: TokenSerializer,
+        status.HTTP_202_ACCEPTED: DetailedCodeSerializer,
+        status.HTTP_400_BAD_REQUEST: None
+    }),
+    two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
+        status.HTTP_200_OK: TokenSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
     })
 )
 class UserViewSet(
@@ -40,11 +49,6 @@ class UserViewSet(
     queryset = User.objects.filter()
     permission_classes = UserPermission,
 
-    @extend_schema(request=AuthTokenSerializer, responses={
-        status.HTTP_200_OK: TokenSerializer,
-        status.HTTP_202_ACCEPTED: DetailedCodeSerializer,
-        status.HTTP_400_BAD_REQUEST: None
-    })
     @action(methods=["post"], detail=False, url_name="login")
     def login(self, request: Request) -> Response:
         serializer = AuthTokenSerializer(data=request.data, context={"request": request})
@@ -64,10 +68,6 @@ class UserViewSet(
             "token": get_user_login_token(user)
         }, status=status.HTTP_200_OK)
 
-    @extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
-        status.HTTP_200_OK: TokenSerializer,
-        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
-    })
     @action(methods=["post"], detail=False, url_name="2fa")
     def two_factor_authentication(self, request: Request) -> Response:
         serializer = TwoFactorAuthenticationCodeSerializer(data=request.data)
@@ -89,6 +89,19 @@ class UserViewSet(
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    create=extend_schema(request=FollowingSerializer, responses={
+        status.HTTP_201_CREATED: FollowingSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }),
+    list=extend_schema(request=None, responses={
+        status.HTTP_200_OK: FollowingSerializer
+    }),
+    disfollow=extend_schema(request=FollowingSerializer, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_400_BAD_REQUEST: None
+    })
+)
 class FollowingsViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -98,8 +111,7 @@ class FollowingsViewSet(
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        user = self.request.user
-        return user.following.filter()
+        return self.request.user.following.filter()
 
     def perform_create(self, serializer):
         serializer.save(follower=self.request.user)
@@ -118,6 +130,12 @@ class FollowingsViewSet(
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(request=None, responses={
+        status.HTTP_200_OK: FollowingSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    })
+)
 class FollowingsUserAPIView(generics.ListAPIView):
     serializer_class = FollowingSerializer
     lookup_url_kwarg = "pk"
@@ -127,10 +145,12 @@ class FollowingsUserAPIView(generics.ListAPIView):
         return user.following.filter()
 
 
-class FollowersViewSet(
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-):
+@extend_schema_view(
+    list=extend_schema(request=None, responses={
+        status.HTTP_200_OK: FollowingSerializer,
+    })
+)
+class FollowersViewSet(generics.ListAPIView):
     serializer_class = FollowerSerializer
     permission_classes = permissions.IsAuthenticated,
 
