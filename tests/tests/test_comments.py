@@ -7,9 +7,9 @@ from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from posts.models import Post, Comment
+from posts.models import Comment, Post
 from tests import register_post, register_users
-from tests.factories import PostFactory, UserFactory, CommentFactory
+from tests.factories import CommentFactory, PostFactory, UserFactory
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -63,7 +63,7 @@ class TestComments(object):
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_comments_of_post(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
-                           post_factory: typing.Type[PostFactory], comment_factory: typing.Type[CommentFactory]) \
+                              post_factory: typing.Type[PostFactory], comment_factory: typing.Type[CommentFactory]) \
             -> None:
         client = api_client()
         users = register_users(client, user_factory, self.tests_count)

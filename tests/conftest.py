@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from tests.factories import PostFactory, UserFactory, CommentFactory
+from tests.factories import CommentFactory, PostFactory, UserFactory
 
 User = get_user_model()
 

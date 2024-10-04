@@ -2,7 +2,7 @@ import factory
 import faker
 from django.contrib.auth import get_user_model
 
-from posts.models import Post, Comment
+from posts.models import Comment, Post
 
 User = get_user_model()
 

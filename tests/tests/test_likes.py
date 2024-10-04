@@ -1,4 +1,3 @@
-import json
 import typing
 
 import pytest
@@ -7,7 +6,7 @@ from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from posts.models import Post, Like
+from posts.models import Like, Post
 from tests import register_post, register_users
 from tests.factories import PostFactory, UserFactory
 
@@ -56,19 +55,3 @@ class TestLikes(object):
             response = client.delete(reverse_lazy(self.endpoint_detail, kwargs={"post_id": post_id}))
             assert response.status_code == status.HTTP_204_NO_CONTENT
             assert Like.objects.filter().count() == 0   # noqa
-
-    def test_likes_count(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory],
-                         post_factory: typing.Type[PostFactory]) -> None:
-        client = api_client()
-        users = register_users(client, user_factory, self.tests_count)
-
-        for user in users:
-            user = User.objects.get(username=user.username)
-            signature = register_post(client, post_factory, user)
-            post = Post.objects.get(signature=signature)   # noqa
-            for liker in register_users(client, user_factory, self.list_test_count):
-                self.__make_like(client, post, liker)
-            client.force_authenticate(user)
-            response = client.get(reverse_lazy(self.endpoint_detail, kwargs={"post_id": post.id}))   # noqa
-            assert response.status_code == status.HTTP_200_OK
-            assert json.loads(response.content)["count"] == self.list_test_count

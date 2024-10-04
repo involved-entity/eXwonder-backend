@@ -1,17 +1,44 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from posts.models import Post, Like, Comment
-from posts.services import CreateModelCustomMixin
+from posts.models import Comment, Like, Post
 from posts.permissions import IsOwnerOrReadOnly
-from posts.serializers import LikeSerializer, PostSerializer, CommentSerializer
+from posts.serializers import CommentSerializer, LikeSerializer, PostIDSerializer, PostSerializer
+from posts.services import CreateModelCustomMixin, filter_posts_queryset_by_author, filter_posts_queryset_by_top
+from users.serializers import DetailedCodeSerializer
 
 User = get_user_model()
 
 
+@extend_schema_view(
+    create=extend_schema(request=PostSerializer, responses={
+        status.HTTP_201_CREATED: PostSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer
+    }),
+    list=extend_schema(request=None, parameters=[
+        OpenApiParameter(name="user", description="Author of posts (username). Default is request sender.", type=str),
+        OpenApiParameter(name="top", description="Valid values is 'likes' and 'recent'. Filter posts by top. "
+                                                 "Cant be used with 'user'.", type=str)
+    ], responses={
+        status.HTTP_200_OK: PostSerializer,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer
+    }),
+    retrieve=extend_schema(request=None, responses={
+        status.HTTP_200_OK: PostSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }),
+    destroy=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    })
+)
 class PostViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -24,17 +51,29 @@ class PostViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        user = self.request.query_params.get("user", 0)
-        user = get_object_or_404(User, pk=int(user)) if user and user.isnumeric() else self.request.user
-        return user.posts.filter()
+        queryset = Post.objects.annotate(likes_count=Count("likes"), comments_count=Count("comments"))   # noqa
+        queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
+        if not has_filtered:
+            queryset = filter_posts_queryset_by_author(self.request, queryset)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
+@extend_schema_view(
+    create=extend_schema(request=PostIDSerializer, responses={
+        status.HTTP_201_CREATED: LikeSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }),
+    destroy=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    })
+)
 class LikeViewSet(
     CreateModelCustomMixin,
-    mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
@@ -43,18 +82,31 @@ class LikeViewSet(
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     lookup_url_kwarg = "post_id"
 
-    def retrieve(self, request: Request, *args, **kwargs) -> Response:
-        post_id = self.kwargs[self.lookup_url_kwarg]
-        return Response({
-            "count": Post.objects.get(pk=post_id).likes.count()   # noqa
-        }, status=status.HTTP_200_OK)
-
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         post_id = self.kwargs[self.lookup_url_kwarg]
-        Post.objects.get(pk=post_id).likes.filter(author=request.user).delete()   # noqa
+        get_object_or_404(Post, pk=post_id).likes.filter(author=request.user).delete()   # noqa
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(
+    create=extend_schema(request=PostIDSerializer, responses={
+        status.HTTP_201_CREATED: CommentSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }),
+    list=extend_schema(request=None, parameters=[
+        OpenApiParameter(name="post_id", description="Post id to get comments.", type=int)
+    ], responses={
+        status.HTTP_200_OK: CommentSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }),
+    destroy=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    })
+)
 class CommentViewSet(
     CreateModelCustomMixin,
     mixins.ListModelMixin,
@@ -66,6 +118,9 @@ class CommentViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        if self.request.data.get("post_id", 0) and self.request.data.get("post_id", 0).isnumeric():
-            return get_object_or_404(Post, pk=self.request.data["post_id"]).comments.filter()   # noqa
-        return Comment.objects.filter()   # noqa
+        if self.action == "list":
+            serializer = PostIDSerializer(data=self.request.query_params)
+            serializer.is_valid(raise_exception=True)
+            return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.filter()  # noqa
+        elif self.action == "destroy":
+            return Comment.objects.filter()   # noqa

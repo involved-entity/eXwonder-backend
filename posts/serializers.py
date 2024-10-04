@@ -1,7 +1,19 @@
+import typing
+from datetime import datetime
+
+import pytz
 from rest_framework import serializers
 
-from posts.models import Like, Post, PostImage, Comment
-from posts.services import datetime_to_timezone
+from posts.models import Comment, Like, Post, PostImage
+
+
+def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Optional[str] = 'time_added') \
+        -> typing.Dict:
+    dt = pytz.timezone(timezone).localize(datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
+    return {
+        attribute_name: (dt + dt.utcoffset()).strftime("%d/%m/%Y %H:%M"),
+        "timezone": timezone
+    }
 
 
 class PostImageSerializer(serializers.ModelSerializer):
@@ -64,3 +76,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "author": {"read_only": True},
             "post": {"read_only": True}
         }
+
+
+class PostIDSerializer(serializers.Serializer):
+    post_id = serializers.IntegerField(min_value=1)
