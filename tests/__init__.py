@@ -1,9 +1,15 @@
-from tests.services import FollowTestMode, FollowTestService, get_users_for_test, register_post, register_users
+from tests.generics import GenericTest
+from tests.mixins import (
+    IterableFollowingRelationsMixin, RegisterObjectsMixin, AssertPaginatedResponseMixin, AssertResponseMixin
+)
+from tests.services import FollowTestMode, FollowTestService
 
 __all__ = [
-    "register_users",
-    "get_users_for_test",
+    "GenericTest",
     "FollowTestService",
     "FollowTestMode",
-    "register_post"
+    "RegisterObjectsMixin",
+    "IterableFollowingRelationsMixin",
+    "AssertPaginatedResponseMixin",
+    "AssertResponseMixin"
 ]

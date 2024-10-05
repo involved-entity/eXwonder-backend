@@ -113,12 +113,15 @@ class FollowingsViewSet(
     def get_queryset(self):
         return self.request.user.following.filter()
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
         serializer.save(follower=self.request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(methods=["delete"], detail=False, url_name="disfollow")
     def disfollow(self, request: Request) -> Response:
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         following = serializer.validated_data["following"]
         follow = Follow.objects.filter(follower=request.user, following=following)   # noqa

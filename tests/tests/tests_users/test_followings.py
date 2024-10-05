@@ -1,14 +1,13 @@
-import random
 import typing
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from tests import FollowTestMode, FollowTestService, register_users
-from tests.factories import UserFactory
+from tests import FollowTestMode, FollowTestService, GenericTest, IterableFollowingRelationsMixin
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -17,76 +16,67 @@ UserFollower = UserFollowing = User
 UsersWithFollowsRelations = typing.List[typing.Tuple[UserFollower, UserFollowing]]
 
 
-class TestFollowings(object):
+class TestFollowingsCreation(IterableFollowingRelationsMixin, GenericTest):
+    endpoint_list = "users:followings-list"
+    endpoint_disfollow = "users:followings-disfollow"
+
+    def test_followings_creation(self, api_client):
+        super().make_test(api_client)
+
+
+class TestFollowingsDisfollow(IterableFollowingRelationsMixin, GenericTest):
+    endpoint_list = "users:followings-list"
+    endpoint_disfollow = "users:followings-disfollow"
+
+    def test_followings_disfollow(self, api_client):
+        super().make_test(api_client)
+
+    def case_test(self, client: APIClient, instance: typing.Tuple) -> typing.Tuple[Response, User]:
+        client.force_authenticate(instance[0])
+        return client.delete(reverse_lazy(self.endpoint_disfollow), data={"following": instance[1].pk}), instance[0]
+
+    def assert_case_test(self, response: Response, *args) -> None:
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert args[0].following.count() == 0
+
+
+class TestFollowingsOfUser(GenericTest):
     endpoint_list = "users:followings-list"
     endpoint_disfollow = "users:followings-disfollow"
     endpoint_user = "users:followings-user"
 
-    tests_count = 2
     list_tests_count = 5
 
-    def __get_registered_user_objects(self, client: APIClient, user_factory: typing.Type[UserFactory]) \
-            -> typing.List[User]:
-        users = register_users(client, user_factory, self.tests_count)
-        return list(map(lambda u: User.objects.get(username=u.username), users))
+    service = FollowTestService(
+        endpoint_list,
+        endpoint_list,
+        list_tests_count,
+        FollowTestMode.FOLLOWINGS
+    )
 
-    def __get_users_with_follows_relations(self, client: APIClient, user_factory: typing.Type[UserFactory]) \
-            -> UsersWithFollowsRelations:
-        relations = []
-        url = reverse_lazy(self.endpoint_list)
-        users = self.__get_registered_user_objects(client, user_factory)
+    def test_followings_of_user(self, api_client):
+        super().make_test(api_client)
 
-        for user in users:
-            client.force_authenticate(user)
-            copy = users.copy()
-            copy.remove(user)
-            following = random.choice(copy)
-            response = client.post(url, data={"following": following.pk})
-            assert response.status_code == status.HTTP_201_CREATED
-            assert user.following.count() == 1
-            relations.append((user, following))
+    def case_test(self, client: APIClient, instance: User) -> None:
+        self.service.make_follow_test(client)
 
-        return relations   # noqa
 
-    def test_followings_creation(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
-            -> None:
-        client = api_client()
-        self.__get_users_with_follows_relations(client, user_factory)
+class TestFollowingsOfEachUser(GenericTest):
+    endpoint_list = "users:followings-list"
+    endpoint_disfollow = "users:followings-disfollow"
+    endpoint_user = "users:followings-user"
 
-    def test_followings_disfollow(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
-            -> None:
-        client = api_client()
-        relations = self.__get_users_with_follows_relations(client, user_factory)
-        url = reverse_lazy(self.endpoint_disfollow)
+    list_tests_count = 5
 
-        for relation in relations:
-            client.force_authenticate(relation[0])
-            response = client.delete(url, data={"following": relation[1].pk})
-            assert response.status_code == status.HTTP_204_NO_CONTENT
+    service = FollowTestService(
+        endpoint_list,
+        endpoint_user,
+        list_tests_count,
+        FollowTestMode.FOLLOWINGS_EACH_USER
+    )
 
-        for follower in [relation[0] for relation in relations]:
-            assert follower.followers.count() == 0 and follower.following.count() == 0
+    def test_followings_of_each_user(self, api_client):
+        super().make_test(api_client)
 
-    def test_followings_of_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
-            -> None:
-        client = api_client()
-        service = FollowTestService(
-            self.endpoint_list,
-            self.endpoint_list,
-            self.list_tests_count,
-            FollowTestMode.FOLLOWINGS
-        )
-        for _ in range(self.tests_count):
-            service.make_follow_test(client, user_factory)
-
-    def test_followings_of_each_user(self, api_client: typing.Type[APIClient], user_factory: typing.Type[UserFactory]) \
-            -> None:
-        client = api_client()
-        service = FollowTestService(
-            self.endpoint_list,
-            self.endpoint_user,
-            self.list_tests_count,
-            FollowTestMode.FOLLOWINGS_EACH_USER
-        )
-        for _ in range(self.tests_count):
-            service.make_follow_test(client, user_factory)
+    def case_test(self, client: APIClient, instance: User) -> None:
+        self.service.make_follow_test(client)

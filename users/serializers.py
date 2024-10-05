@@ -80,10 +80,10 @@ class FollowingSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        following = attrs.get("following", 0)
+        following = attrs.get("following", None)
 
-        if not following:
-            raise serializers.ValidationError("User is not defined.", code="invalid")
+        if not following or following == self.context["request"].user:
+            raise serializers.ValidationError("User is not defined or invalid.", code="invalid")
         return attrs
 
     def create(self, validated_data):
