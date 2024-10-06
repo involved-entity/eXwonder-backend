@@ -1,6 +1,7 @@
 from tests.generics import GenericTest
 from tests.mixins import (
-    IterableFollowingRelationsMixin, RegisterObjectsMixin, AssertPaginatedResponseMixin, AssertResponseMixin
+    IterableFollowingRelationsMixin, RegisterObjectsMixin, AssertPaginatedResponseMixin, AssertResponseMixin,
+    SendEndpointDetailRequestMixin, CheckUserDataMixin
 )
 from tests.services import FollowTestMode, FollowTestService
 
@@ -11,5 +12,7 @@ __all__ = [
     "RegisterObjectsMixin",
     "IterableFollowingRelationsMixin",
     "AssertPaginatedResponseMixin",
-    "AssertResponseMixin"
+    "AssertResponseMixin",
+    "SendEndpointDetailRequestMixin",
+    "CheckUserDataMixin"
 ]

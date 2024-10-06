@@ -8,7 +8,7 @@ User = get_user_model()
 pytestmark = [pytest.mark.django_db]
 
 
-class TestFollowers(GenericTest):
+class TestFollowersOfUser(GenericTest):
     endpoint_follow = "users:followings-list"
     endpoint_list = "users:followers"
 

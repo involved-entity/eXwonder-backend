@@ -10,31 +10,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from tests import GenericTest
+from tests import GenericTest, SendEndpointDetailRequestMixin, CheckUserDataMixin
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
 
 ResponseContent = typing.Dict
-
-
-class SendEndpointDetailRequestMixin:
-    def send_endpoint_detail_request(self, client: APIClient, status__: int, **kwargs) -> Response:
-        detail_url = reverse_lazy(self.endpoint_detail, kwargs=kwargs)   # noqa
-        response = client.get(detail_url)
-        assert response.status_code == status__
-        return response
-
-
-class CheckUserDataMixin(SendEndpointDetailRequestMixin):
-    def check_user_data(self, client: APIClient, user: User) -> None:
-        response = self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=user.pk)
-        content = json.loads(response.content)
-        assert content["id"] == user.pk
-        assert content["username"] == user.username
-        assert content["email"] == user.email
-        assert content["timezone"] == user.timezone
-        assert content["is_2fa_enabled"] == user.is_2fa_enabled
 
 
 class TestUsersCreation(GenericTest):
@@ -45,7 +26,7 @@ class TestUsersCreation(GenericTest):
         super().make_test(api_client)
 
 
-class TestUsersPermissions(SendEndpointDetailRequestMixin, GenericTest):
+class TestUsersPermissions(GenericTest):
     endpoint_list = "users:account-list"
     endpoint_detail = "users:account-detail"
 
@@ -53,10 +34,12 @@ class TestUsersPermissions(SendEndpointDetailRequestMixin, GenericTest):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> None:
-        self.send_endpoint_detail_request(client, status.HTTP_403_FORBIDDEN, pk=instance.pk)
+        self.send_endpoint_detail_request(client, status.HTTP_401_UNAUTHORIZED, pk=instance.pk)
+        client.force_authenticate(instance)
+        self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=instance.pk)
 
 
-class TestUsersRetrieve(CheckUserDataMixin, GenericTest):
+class TestUsersRetrieve(GenericTest):
     endpoint_list = "users:account-list"
     endpoint_detail = "users:account-detail"
 
@@ -69,7 +52,7 @@ class TestUsersRetrieve(CheckUserDataMixin, GenericTest):
         self.check_user_data(client, user_for_check)
 
 
-class TestUsersUpdate(CheckUserDataMixin, GenericTest):
+class TestUsersUpdate(GenericTest):
     endpoint_list = "users:account-list"
     endpoint_detail = "users:account-detail"
 

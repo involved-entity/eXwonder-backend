@@ -23,7 +23,7 @@ def get_user_login_token(user: User) -> str:
     token, _ = Token.objects.get_or_create(user=user)  # noqa
     utc = timezone.now().replace(tzinfo=pytz.utc)
 
-    if token.created > utc - (60 * 60 * settings.TOKEN_EXP_TIME):
+    if token.created < (utc - settings.TOKEN_EXP_TIME):
         token.delete()
         token = Token.objects.create(user=user)  # noqa
 

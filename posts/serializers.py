@@ -4,6 +4,7 @@ from datetime import datetime
 import pytz
 from rest_framework import serializers
 
+from users.serializers import UserSerializer
 from posts.models import Comment, Like, Post, PostImage
 
 
@@ -20,23 +21,21 @@ class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostImage
         fields = "id", "image"
-        extra_kwargs = {
-            "id": {"read_only": True},
-            "image": {"read_only": True}
-        }
+        read_only_fields = "id", "image"
 
 
 class PostSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
     images = PostImageSerializer(many=True, read_only=True)
     time_added = serializers.SerializerMethodField(read_only=True)
 
+    likes_count = serializers.IntegerField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Post
-        fields = "id", "author", "signature", "time_added", "images"
-        extra_kwargs = {
-            "id": {"read_only": True},
-            "author": {"read_only": True},
-        }
+        fields = "id", "author", "signature", "time_added", "images", "likes_count", "comments_count"
+        read_only_fields = "id",
 
     def validate(self, attrs):
         for key, value in self.context["request"].data.items():
@@ -66,11 +65,7 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = "id", "author", "post"
-        extra_kwargs = {
-            "id": {"read_only": True},
-            "author": {"read_only": True},
-            "post": {"read_only": True}
-        }
+        read_only_fields = "id", "author", "post"
 
     def create(self, validated_data):
         like = Like.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
@@ -80,14 +75,12 @@ class LikeSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+
     class Meta:
         model = Comment
         fields = "id", "author", "post", "comment"
-        extra_kwargs = {
-            "id": {"read_only": True},
-            "author": {"read_only": True},
-            "post": {"read_only": True}
-        }
+        read_only_fields = "id", "post"
 
 
 class PostIDSerializer(serializers.Serializer):

@@ -68,6 +68,8 @@ class ExwonderUser(AbstractBaseUser):
         verbose_name = _("Пользователь")
         verbose_name_plural = _("Пользователи")
 
+        ordering = "pk",
+
         db_table = "exwonder_users"
 
     def __str__(self):

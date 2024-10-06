@@ -23,11 +23,11 @@ class TestLikesCreation(GenericTest):
         self.register_like(client, instance)
 
 
-class TestLikesDeletion(GenericTest):
+class TestLikesDelete(GenericTest):
     endpoint_list = "posts:likes-list"
     endpoint_detail = "posts:likes-detail"
 
-    def test_likes_creation(self, api_client):
+    def test_likes_delete(self, api_client):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> Response:

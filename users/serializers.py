@@ -14,9 +14,16 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
+        fields = "id", "username", "avatar"
+        read_only_fields = "id",
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
         fields = "id", "username", "password", "email", "avatar", "timezone", "is_2fa_enabled"
+        read_only_fields = "id",
         extra_kwargs = {
-            "id": {"read_only": True},
             "password": {"write_only": True},
             "email": {"required": False},
             "avatar": {"required": False},
@@ -63,32 +70,34 @@ class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
 
 
 class FollowerSerializer(serializers.ModelSerializer):
+    follower = UserSerializer(read_only=True)
+
     class Meta:
         model = Follow
         fields = "id", "follower"
-        extra_kwargs = {
-            "id": {"read_only": True}
-        }
+        read_only_fields = "id",
 
 
 class FollowingSerializer(serializers.ModelSerializer):
+    following = UserSerializer(read_only=True)
+
     class Meta:
         model = Follow
         fields = "id", "following"
-        extra_kwargs = {
-            "id": {"read_only": True}
-        }
+        read_only_fields = "id",
 
-    def validate(self, attrs):
-        following = attrs.get("following", None)
-
-        if not following or following == self.context["request"].user:
-            raise serializers.ValidationError("User is not defined or invalid.", code="invalid")
-        return attrs
+    # def validate(self, attrs):
+    #     print(attrs, "SERIALIZER")
+    #     following = attrs.get("following", None)
+    #
+    #     if not following or following == self.context["request"].user:
+    #         raise serializers.ValidationError("User is not defined or invalid.", code="invalid")
+    #     return attrs
 
     def create(self, validated_data):
         follower = validated_data["follower"]
         following = validated_data["following"]
+
         filter = Follow.objects.filter(follower=follower, following=following)   # noqa
 
         if not filter.exists():

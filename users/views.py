@@ -16,6 +16,7 @@ from users.serializers import (
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserSerializer,
+    UserDetailSerializer
 )
 from users.services import get_user_login_token, make_2fa_authentication
 from users.tasks import send_2fa_code_mail_message
@@ -45,9 +46,14 @@ class UserViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
-    serializer_class = UserSerializer
+    serializer_class = UserDetailSerializer
     queryset = User.objects.filter()
     permission_classes = UserPermission,
+
+    def get_serializer_class(self, *args, **kwargs):
+        if self.action == "retrieve":
+            return UserSerializer
+        return self.serializer_class
 
     @action(methods=["post"], detail=False, url_name="login")
     def login(self, request: Request) -> Response:
@@ -111,19 +117,26 @@ class FollowingsViewSet(
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.following.filter()
+        return self.request.user.following.select_related("following")
 
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={"request": request})
+        following = get_object_or_404(User, pk=request.data.get("following", 0))
+        if following == request.user:
+            return Response({
+                "detail": "User is invalid.",
+                "code": "invalid"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(follower=self.request.user)
+        serializer.save(follower=self.request.user, following=following)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(methods=["delete"], detail=False, url_name="disfollow")
     def disfollow(self, request: Request) -> Response:
-        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        following = serializer.validated_data["following"]
+        following = get_object_or_404(User, pk=request.data.get("following", 0))
         follow = Follow.objects.filter(follower=request.user, following=following)   # noqa
 
         if follow.exists():
@@ -145,7 +158,7 @@ class FollowingsUserAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
-        return user.following.filter()
+        return user.following.select_related("following")
 
 
 @extend_schema_view(
@@ -158,4 +171,4 @@ class FollowersAPIView(generics.ListAPIView):
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.followers.filter()
+        return self.request.user.followers.select_related("follower")

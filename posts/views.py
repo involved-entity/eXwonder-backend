@@ -51,7 +51,8 @@ class PostViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        queryset = Post.objects.annotate(likes_count=Count("likes"), comments_count=Count("comments"))   # noqa
+        queryset = (Post.objects.annotate(likes_count=Count("likes"), comments_count=Count("comments"))   # noqa
+                    .prefetch_related("images"))
         queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
         if not has_filtered:
             queryset = filter_posts_queryset_by_author(self.request, queryset)

@@ -15,7 +15,6 @@ from tests.factories import CommentFactory, PostFactory, UserFactory
 
 User = get_user_model()
 
-BatchCreateUsers = typing.List
 BatchStubUsers = typing.List
 
 IMAGES_FOR_TEST_NAMES = [
@@ -30,30 +29,52 @@ class ProxyFactories(object):
     Comment = CommentFactory
 
 
-class RegisterObjectsMixin(ProxyFactories):
+class SendEndpointDetailRequestMixin:
+    def send_endpoint_detail_request(self, client: APIClient, status__: int, **kwargs) -> Response:
+        detail_url = reverse_lazy(self.endpoint_detail, kwargs=kwargs)   # noqa
+        response = client.get(detail_url)
+        assert response.status_code == status__
+        return response
+
+
+class CheckUserDataMixin(SendEndpointDetailRequestMixin):
+    def check_user_data(self, client: APIClient, user: User, content: typing.Optional[typing.Dict] = None) -> None:
+        if not content:
+            response = self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=user.pk)
+            content = json.loads(response.content)
+        assert content["id"] == user.pk
+        assert content["username"] == user.username
+
+
+class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):
     REGISTER_USERS_ENDPOINT: typing.Final = "users:account-list"
-    REGISTER_POSTS_ENDPOINT: typing.Final = "posts:posts-list"
 
-    def __get_post_id_for_registration(self, client: APIClient, author: User, post: typing.Optional[Post]) -> int:
-        return post.id if post else self.register_post(client, author).pk   # noqa
+    def parse_stub_user(self, user):
+        return {
+            "username": user.username,
+            "email": user.email,
+            "password": user.password,
+        }
 
-    def __get_users_for_test(self, users_count: int, stub: bool = False) \
-            -> BatchCreateUsers | BatchStubUsers:
-        return self.User.create_batch(users_count) if not stub else self.User.stub_batch(users_count)
+    def get_validated_content(self, client: APIClient, data: typing.Dict) -> typing.Dict:
+        response = client.post(reverse_lazy(self.REGISTER_USERS_ENDPOINT), data=data)
+        assert response.status_code == status.HTTP_201_CREATED
+        return json.loads(response.content)
 
     def register_users(self, client: APIClient, users_count: int, stub: bool = False) -> BatchStubUsers:
-        users = self.__get_users_for_test(users_count, stub=True)
+        content_list = []
+        users = self.User.stub_batch(users_count)
         for user in users:
-            data = {
-                "username": user.username,
-                "email": user.email,
-                "password": user.password,
-            }
-            response = client.post(reverse_lazy(self.REGISTER_USERS_ENDPOINT), data=data)
-            assert response.status_code == status.HTTP_201_CREATED
-        if not stub:
-            users = User.objects.filter(username__in=[user.username for user in users])
-        return users
+            data = self.parse_stub_user(user)
+            content_list.append(self.get_validated_content(client, data))
+        users_created = User.objects.filter(username__in=[user.username for user in users])
+        for user, content in zip(users_created, content_list):
+            self.check_user_data(client, user, content=content)
+        return users if stub else users_created
+
+
+class RegisterPostMixin(ProxyFactories):
+    REGISTER_POSTS_ENDPOINT: typing.Final = "posts:posts-list"
 
     def register_post(self, client: APIClient, author: User) -> Post:
         client.force_authenticate(author)
@@ -71,9 +92,11 @@ class RegisterObjectsMixin(ProxyFactories):
         client.force_authenticate()
         return Post.objects.get(signature=data["signature"])   # noqa
 
+
+class RegisterLikeMixin(RegisterPostMixin):
     def register_like(self, client: APIClient, author: User, post: typing.Optional[Post] = None) \
             -> typing.Tuple[User, int]:
-        post_id = self.__get_post_id_for_registration(client, author, post)
+        post_id = post.id if post else self.register_post(client, author).pk   # noqa
         data = {"post_id": post_id}  # noqa
         client.force_authenticate(author)
         response = client.post(reverse_lazy(self.endpoint_list), data=data)   # noqa
@@ -81,8 +104,10 @@ class RegisterObjectsMixin(ProxyFactories):
         client.force_authenticate()
         return author, post_id
 
+
+class RegisterCommentMixin(RegisterPostMixin):
     def register_comment(self, client: APIClient, author: User, post: typing.Optional[Post] = None) -> User:
-        post_id = self.__get_post_id_for_registration(client, author, post)
+        post_id = post.id if post else self.register_post(client, author).pk   # noqa
         client.force_authenticate(author)
         data = {
             "post_id": post_id,
@@ -92,6 +117,10 @@ class RegisterObjectsMixin(ProxyFactories):
         client.force_authenticate()
         assert response.status_code == status.HTTP_201_CREATED
         return Comment.objects.first()   # noqa
+
+
+class RegisterObjectsMixin(RegisterUsersMixin, RegisterLikeMixin, RegisterCommentMixin):
+    pass
 
 
 class IterableFollowingRelationsMixin(object):
