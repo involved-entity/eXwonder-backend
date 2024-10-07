@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from posts.models import Post
-from tests import GenericTest, AssertPaginatedResponseMixin, AssertResponseMixin
+from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]

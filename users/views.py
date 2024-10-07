@@ -15,8 +15,8 @@ from users.serializers import (
     FollowingSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
+    UserDetailSerializer,
     UserSerializer,
-    UserDetailSerializer
 )
 from users.services import get_user_login_token, make_2fa_authentication
 from users.tasks import send_2fa_code_mail_message

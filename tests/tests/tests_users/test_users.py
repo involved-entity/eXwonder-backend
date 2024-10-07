@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from tests import GenericTest, SendEndpointDetailRequestMixin, CheckUserDataMixin
+from tests import GenericTest
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]

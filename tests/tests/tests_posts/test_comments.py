@@ -1,4 +1,3 @@
-import json
 import typing
 
 import pytest
@@ -8,8 +7,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from posts.models import Post, Comment
-from tests import GenericTest, AssertPaginatedResponseMixin
+from posts.models import Comment, Post
+from tests import AssertPaginatedResponseMixin, GenericTest
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]

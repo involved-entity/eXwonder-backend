@@ -24,7 +24,7 @@ class Post(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-time_added",
+        ordering = "-id",
 
     def __str__(self):
         return f"{self.pk} post."

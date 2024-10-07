@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Count
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, permissions, status, viewsets
@@ -51,8 +52,7 @@ class PostViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        queryset = (Post.objects.annotate(likes_count=Count("likes"), comments_count=Count("comments"))   # noqa
-                    .prefetch_related("images"))
+        queryset = Post.objects.filter()   # noqa
         queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
         if not has_filtered:
             queryset = filter_posts_queryset_by_author(self.request, queryset)
@@ -60,6 +60,11 @@ class PostViewSet(
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+        key = settings.POSTS_RELATED_TOP_CACHE_NAME
+        cache.delete(key)
+
+        key = str(self.request.user.pk) + settings.USER_RELATED_CACHE_NAME_SEP + settings.USER_POSTS_CACHE_NAME
+        cache.delete(key)
 
 
 @extend_schema_view(

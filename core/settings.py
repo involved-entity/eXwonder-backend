@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'dj_rest_auth',
+    'drf_spectacular',
 
     'users.apps.UsersConfig',
     'posts.apps.PostsConfig'
@@ -100,6 +101,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("DJANGO_CACHE_URL"),
+        "TIMEOUT": 60*60*24,
+    }
+}
+
+USER_RELATED_CACHE_NAME_SEP = ":"
+USER_POSTS_CACHE_NAME = "posts"
+POSTS_LIKED_TOP_CACHE_NAME = "posts:liked"
+POSTS_RELATED_TOP_CACHE_NAME = "posts:related"
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -109,7 +123,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication"
     ],
-    "PAGE_SIZE": 20,
+    "PAGE_SIZE": 50,
 }
 
 SPECTACULAR_SETTINGS = {

@@ -1,7 +1,11 @@
 from tests.generics import GenericTest
 from tests.mixins import (
-    IterableFollowingRelationsMixin, RegisterObjectsMixin, AssertPaginatedResponseMixin, AssertResponseMixin,
-    SendEndpointDetailRequestMixin, CheckUserDataMixin
+    AssertPaginatedResponseMixin,
+    AssertResponseMixin,
+    CheckUserDataMixin,
+    IterableFollowingRelationsMixin,
+    RegisterObjectsMixin,
+    SendEndpointDetailRequestMixin,
 )
 from tests.services import FollowTestMode, FollowTestService
 

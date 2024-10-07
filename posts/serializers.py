@@ -4,8 +4,8 @@ from datetime import datetime
 import pytz
 from rest_framework import serializers
 
-from users.serializers import UserSerializer
 from posts.models import Comment, Like, Post, PostImage
+from users.serializers import UserSerializer
 
 
 def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Optional[str] = 'time_added') \
