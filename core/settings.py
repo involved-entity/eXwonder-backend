@@ -110,9 +110,13 @@ CACHES = {
 }
 
 USER_RELATED_CACHE_NAME_SEP = ":"
+USER_UPDATES_CACHE_NAME = "updates"
 USER_POSTS_CACHE_NAME = "posts"
 POSTS_LIKED_TOP_CACHE_NAME = "posts:liked"
-POSTS_RELATED_TOP_CACHE_NAME = "posts:related"
+POSTS_RECENT_TOP_CACHE_NAME = "posts:recent"
+
+USER_UPDATES_CACHE_TIME = 60*10
+POSTS_RECENT_TOP_CACHE_TIME = 60*60
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
@@ -121,7 +125,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
+        "users.authentication.TokenAuthentication"
     ],
     "PAGE_SIZE": 50,
 }
@@ -146,7 +150,8 @@ CUSTOM_USER_AVATARS_DIR = "avatars"
 POSTS_IMAGES_DIR = "posts_images"
 TEST_IMAGES_DIR = "test_images"
 
-TOKEN_EXP_TIME = timedelta(hours=24)
+TOKEN_EXP_TIME = timedelta(days=30)
+LAST_LOGIN_UPDATE_TIME = timedelta(hours=3)
 TWO_FACTOR_AUTHENTICATION_CODE_LENGTH = 5
 TWO_FACTOR_AUTHENTICATION_CODE_LIVETIME = 60 * 10   # seconds
 

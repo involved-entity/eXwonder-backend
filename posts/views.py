@@ -60,7 +60,7 @@ class PostViewSet(
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        key = settings.POSTS_RELATED_TOP_CACHE_NAME
+        key = settings.POSTS_RECENT_TOP_CACHE_NAME
         cache.delete(key)
 
         key = str(self.request.user.pk) + settings.USER_RELATED_CACHE_NAME_SEP + settings.USER_POSTS_CACHE_NAME
