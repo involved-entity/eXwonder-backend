@@ -62,3 +62,25 @@ def send_reset_password_mail(
         html_email_template_name
     )
     return
+
+
+# @shared_task
+# def make_center_crop(avatar_path: str) -> None:
+#     image_full_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / avatar_path)
+#     image = open_image(os.path.join(image_full_path))
+#     new_crop_image_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / get_upload_crop_path(avatar_path))
+#     _center_crop(image).save(new_crop_image_path)
+#     return
+#
+#
+# def _center_crop(img: Image) -> Image:
+#     width, height = img.size
+#     if width / height == 1:
+#         return img
+#
+#     left = (width - min(width, height)) / 2
+#     top = (height - min(width, height)) / 2
+#     right = (width + min(width, height)) / 2
+#     bottom = (height + min(width, height)) / 2
+#
+#     return img.crop((int(left), int(top), int(right), int(bottom)))

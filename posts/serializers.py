@@ -49,10 +49,10 @@ class PostSerializer(serializers.ModelSerializer):
         )
         post.save()
 
-        for key, value in self.context["request"].data.items():
-            if key.startswith("image"):
-                post_image = PostImage(image=value, post=post)
-                post_image.save()
+        post_images = (PostImage(image=value, post=post) for key, value in self.context["request"].data.items() 
+                       if key.startswith("image"))
+
+        PostImage.objects.bulk_create(post_images)
 
         return post
 
