@@ -1,5 +1,7 @@
 import json
 import random
+import secrets
+import string
 import typing
 
 import pytest
@@ -10,7 +12,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from tests import GenericTest, AssertResponseMixin
+from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -40,6 +42,30 @@ class TestUsersMy(AssertResponseMixin, GenericTest):
         self.assert_response(response, needed_keys=('id', 'username', 'timezone', 'is_2fa_enabled'))
 
 
+class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
+    endpoint_list = 'users:account-list'
+
+    def test_users_search(self, api_client):
+        super().make_test(api_client)
+
+    def __generate_random_search_users(self, users_count: int) -> typing.Tuple[typing.Any, ...]:
+        return tuple(self.User.stub(username="searchuser" + ''.join(secrets.choice(string.ascii_letters) for i in range(5)))
+                     for i in range(users_count))
+
+    def case_test(self, client: APIClient, instance: User) -> Response:
+        users = self.User.stub_batch(self.list_tests_count - 2)
+        users.extend(self.__generate_random_search_users(2))
+        self.register_users(client, self.list_tests_count, users=users)
+        client.force_authenticate(instance)
+        return client.get(f'{reverse_lazy(self.endpoint_list)}?search=sea')
+
+    def assert_case_test(self, response: Response, *args) -> None:
+        self.assert_paginated_response(response, 2)
+
+    def after_assert(self, client: APIClient, *args) -> None:
+        User.objects.filter(username__startswith="sea").delete()
+
+
 class TestUsersPermissions(GenericTest):
     endpoint_list = "users:account-list"
     endpoint_detail = "users:account-detail"
@@ -48,7 +74,7 @@ class TestUsersPermissions(GenericTest):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> None:
-        self.send_endpoint_detail_request(client, status.HTTP_401_UNAUTHORIZED, pk=instance.pk)
+        self.send_endpoint_detail_request(client, status.HTTP_403_FORBIDDEN, pk=instance.pk)
         client.force_authenticate(instance)
         self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=instance.pk)
 

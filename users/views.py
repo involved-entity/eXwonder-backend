@@ -41,6 +41,7 @@ User = get_user_model()
     })
 )
 class UserViewSet(
+    mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
@@ -51,9 +52,18 @@ class UserViewSet(
     permission_classes = UserPermission,
 
     def get_serializer_class(self, *args, **kwargs):
-        if self.action == "retrieve":
+        if self.action in ("retrieve", "list"):   # noqa
             return UserSerializer
         return self.serializer_class
+
+    def get_queryset(self):
+        if self.action == 'list':   # noqa
+            query = self.request.query_params.get("search", None)
+            if not query or len(query) < 3:
+                return User.objects.none()
+            return User.objects.filter(username__startswith=query)
+
+        return self.queryset
 
     @action(methods=["get"], detail=False, url_name="my", permission_classes=(permissions.IsAuthenticated,))
     def my(self, request: Request) -> Response:

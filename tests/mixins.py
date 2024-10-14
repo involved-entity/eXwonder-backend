@@ -62,9 +62,10 @@ class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):
         assert response.status_code == status.HTTP_201_CREATED
         return json.loads(response.content)
 
-    def register_users(self, client: APIClient, users_count: int, stub: bool = False) -> BatchStubUsers:
+    def register_users(self, client: APIClient, users_count: int, stub: typing.Optional[bool] = False,
+                       users: typing.Optional[typing.List[User]] = None) -> BatchStubUsers:
         content_list = []
-        users = self.User.stub_batch(users_count)
+        users = users or self.User.stub_batch(users_count)
         for user in users:
             data = self.parse_stub_user(user)
             content_list.append(self.get_validated_content(client, data))
@@ -157,8 +158,9 @@ class AssertResponseMixin(AssertContentKeysMixin):
 
 
 class AssertPaginatedResponseMixin(AssertResponseMixin):
-    def assert_paginated_response(self, response: Response) -> typing.Dict:
+    def assert_paginated_response(self, response: Response, needed_results_len: typing.Optional[int] = None) \
+            -> typing.Dict:
         content = self.assert_response(response, needed_keys=("count", "next", "previous", "results"))
-        assert content["count"] == self.list_tests_count   # noqa
-        assert len(content["results"]) == self.list_tests_count   # noqa
+        assert content["count"] == (needed_results_len or self.list_tests_count)   # noqa
+        assert len(content["results"]) == (needed_results_len or self.list_tests_count)   # noqa
         return content
