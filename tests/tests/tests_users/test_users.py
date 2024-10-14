@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from tests import GenericTest
+from tests import GenericTest, AssertResponseMixin
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -24,6 +24,20 @@ class TestUsersCreation(GenericTest):
 
     def test_users_creation(self, api_client):
         super().make_test(api_client)
+
+
+class TestUsersMy(AssertResponseMixin, GenericTest):
+    endpoint_detail = "users:account-my"
+
+    def test_users_my(self, api_client):
+        super().make_test(api_client)
+
+    def case_test(self, client: APIClient, instance: User) -> typing.Tuple[Response, User]:
+        client.force_authenticate(instance)
+        return self.send_endpoint_detail_request(client, status.HTTP_200_OK), instance
+
+    def assert_case_test(self, response: Response, *args) -> None:
+        self.assert_response(response, needed_keys=('id', 'username', 'timezone', 'is_2fa_enabled'))
 
 
 class TestUsersPermissions(GenericTest):

@@ -38,12 +38,13 @@ class SendEndpointDetailRequestMixin:
 
 
 class CheckUserDataMixin(SendEndpointDetailRequestMixin):
-    def check_user_data(self, client: APIClient, user: User, content: typing.Optional[typing.Dict] = None) -> None:
+    def check_user_data(self, client: APIClient, user: User, content: typing.Optional[typing.Dict] = None) -> typing.Dict:
         if not content:
             response = self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=user.pk)
             content = json.loads(response.content)
         assert content["id"] == user.pk
         assert content["username"] == user.username
+        return content
 
 
 class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):

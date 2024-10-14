@@ -21,6 +21,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -58,6 +59,7 @@ paths:
               $ref: '#/components/schemas/PostID'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -91,6 +93,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '204':
@@ -125,6 +128,7 @@ paths:
               $ref: '#/components/schemas/PostID'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -158,6 +162,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '204':
@@ -192,6 +197,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -222,6 +228,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Post'
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -254,6 +261,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -279,6 +287,7 @@ paths:
       tags:
       - posts
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '204':
@@ -294,6 +303,152 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DetailedCode'
+          description: ''
+  /api/v1/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/users/account/:
     post:
@@ -313,6 +468,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -334,6 +490,7 @@ paths:
       tags:
       - users
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -366,6 +523,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -397,6 +555,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserDetail'
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -423,6 +582,7 @@ paths:
               $ref: '#/components/schemas/AuthToken'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -439,6 +599,21 @@ paths:
           description: ''
         '400':
           description: No response body
+  /api/v1/users/account/my/:
+    get:
+      operationId: users_account_my_retrieve
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+          description: ''
   /api/v1/users/account/two_factor_authentication/:
     post:
       operationId: users_account_two_factor_authentication_create
@@ -457,6 +632,7 @@ paths:
               $ref: '#/components/schemas/TwoFactorAuthenticationCode'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -484,6 +660,7 @@ paths:
       tags:
       - users
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -505,6 +682,7 @@ paths:
       tags:
       - users
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -529,6 +707,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Following'
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -549,6 +728,7 @@ paths:
       tags:
       - users
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '204':
@@ -573,6 +753,7 @@ paths:
       tags:
       - users
       security:
+      - cookieAuth: []
       - tokenAuth: []
       - {}
       responses:
@@ -605,6 +786,7 @@ paths:
               $ref: '#/components/schemas/PasswordChange'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -636,6 +818,7 @@ paths:
               $ref: '#/components/schemas/PasswordReset'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       - {}
       responses:
@@ -670,6 +853,7 @@ paths:
               $ref: '#/components/schemas/PasswordResetConfirm'
         required: true
       security:
+      - cookieAuth: []
       - tokenAuth: []
       - {}
       responses:
@@ -1082,6 +1266,10 @@ components:
       - password
       - username
   securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
     tokenAuth:
       type: apiKey
       in: header

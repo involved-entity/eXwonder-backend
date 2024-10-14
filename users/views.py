@@ -55,6 +55,10 @@ class UserViewSet(
             return UserSerializer
         return self.serializer_class
 
+    @action(methods=["get"], detail=False, url_name="my", permission_classes=(permissions.IsAuthenticated,))
+    def my(self, request: Request) -> Response:
+        return Response(self.serializer_class(instance=request.user).data, status=status.HTTP_200_OK)
+
     @action(methods=["post"], detail=False, url_name="login")
     def login(self, request: Request) -> Response:
         serializer = AuthTokenSerializer(data=request.data, context={"request": request})
