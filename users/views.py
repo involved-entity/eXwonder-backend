@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
@@ -25,6 +25,10 @@ User = get_user_model()
 
 
 @extend_schema_view(
+    list=extend_schema(parameters=[
+        OpenApiParameter(name="search", description="Search username query. Length must be 3 and more. Required.", type=str,
+                         required=True)
+    ]),
     create=extend_schema(request=UserSerializer),
     update=extend_schema(request=UserSerializer),
     retrieve=extend_schema(request=None, responses={
@@ -116,7 +120,9 @@ class UserViewSet(
     }),
     list=extend_schema(request=None, responses={
         status.HTTP_200_OK: FollowingSerializer
-    }),
+    }, parameters=[
+        OpenApiParameter(name="search", description="Search username query.", type=str)
+    ]),
     disfollow=extend_schema(request=FollowingSerializer, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_400_BAD_REQUEST: None
@@ -131,7 +137,9 @@ class FollowingsViewSet(
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.following.select_related("following")
+        query = self.request.query_params.get("search", None)
+        queryset = self.request.user.following.select_related("following")
+        return queryset if not query else queryset.filter(following__username__startswith=query)
 
     def create(self, request, *args, **kwargs):
         following = get_object_or_404(User, pk=request.data.get("following", 0))

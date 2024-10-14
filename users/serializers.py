@@ -15,14 +15,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "id", "username", "avatar"
-        read_only_fields = "id",
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "id", "username", "password", "email", "avatar", "timezone", "is_2fa_enabled"
-        read_only_fields = "id",
         extra_kwargs = {
             "password": {"write_only": True},
             "email": {"required": False},
@@ -75,7 +73,6 @@ class FollowerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "id", "follower"
-        read_only_fields = "id",
 
 
 class FollowingSerializer(serializers.ModelSerializer):
@@ -84,15 +81,6 @@ class FollowingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "id", "following"
-        read_only_fields = "id",
-
-    # def validate(self, attrs):
-    #     print(attrs, "SERIALIZER")
-    #     following = attrs.get("following", None)
-    #
-    #     if not following or following == self.context["request"].user:
-    #         raise serializers.ValidationError("User is not defined or invalid.", code="invalid")
-    #     return attrs
 
     def create(self, validated_data):
         follower = validated_data["follower"]

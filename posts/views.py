@@ -24,7 +24,7 @@ User = get_user_model()
     }),
     list=extend_schema(request=None, parameters=[
         OpenApiParameter(name="user", description="Author of posts (username). Default is request sender.", type=str),
-        OpenApiParameter(name="top", description="Valid values is 'likes' and 'recent'. Filter posts by top. "
+        OpenApiParameter(name="top", description="Valid values is 'likes', 'recent' and 'updates'. Filter posts by top. "
                                                  "Cant be used with 'user'.", type=str)
     ], responses={
         status.HTTP_200_OK: PostSerializer,

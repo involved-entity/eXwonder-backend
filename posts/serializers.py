@@ -21,7 +21,7 @@ class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostImage
         fields = "id", "image"
-        read_only_fields = "id", "image"
+        read_only_fields = "image",
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -35,7 +35,6 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = "id", "author", "signature", "time_added", "images", "likes_count", "comments_count"
-        read_only_fields = "id",
 
     def validate(self, attrs):
         for key, value in self.context["request"].data.items():
@@ -65,7 +64,7 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = "id", "author", "post"
-        read_only_fields = "id", "author", "post"
+        read_only_fields = "author", "post"
 
     def create(self, validated_data):
         like = Like.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
@@ -80,7 +79,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = "id", "author", "post", "comment"
-        read_only_fields = "id", "post"
+        read_only_fields = "post",
 
 
 class PostIDSerializer(serializers.Serializer):
