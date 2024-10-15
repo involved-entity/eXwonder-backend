@@ -17,8 +17,12 @@ paths:
         name: search
         schema:
           type: string
-        description: Search username query. Length must be 3 and more. Required.
-        required: true
+        description: Search username query. Length must be 3 and more.
+      - in: query
+        name: username
+        schema:
+          type: string
+        description: Username hard.
       tags:
       - account
       security:
@@ -179,6 +183,17 @@ paths:
           description: ''
         '400':
           description: No response body
+  /api/v1/account/account/logout/:
+    get:
+      operationId: account_account_logout_retrieve
+      tags:
+      - account
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/account/account/my/:
     get:
       operationId: account_account_my_retrieve
@@ -247,23 +262,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFollowerList'
+                $ref: '#/components/schemas/PaginatedFollowingList'
           description: ''
-  /api/v1/account/followings/:
+  /api/v1/account/followers/user/:
     get:
-      operationId: account_followings_list
+      operationId: account_followers_user_retrieve
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
+      - in: query
+        name: id
         schema:
           type: integer
-      - in: query
-        name: search
-        schema:
-          type: string
-        description: Search username query.
+        description: User id.
+        required: true
       tags:
       - account
       security:
@@ -271,11 +281,10 @@ paths:
       - tokenAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedFollowingList'
-          description: ''
+          description: No response body
+        '404':
+          description: No response body
+  /api/v1/account/followings/:
     post:
       operationId: account_followings_create
       tags:
@@ -946,19 +955,6 @@ components:
       required:
       - code
       - detail
-    Follower:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        follower:
-          allOf:
-          - $ref: '#/components/schemas/User'
-          readOnly: true
-      required:
-      - follower
-      - id
     Following:
       type: object
       properties:
@@ -1011,29 +1007,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
-    PaginatedFollowerList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Follower'
     PaginatedFollowingList:
       type: object
       required:

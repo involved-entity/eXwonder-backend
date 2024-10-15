@@ -10,7 +10,7 @@ pytestmark = [pytest.mark.django_db]
 
 class TestFollowersOfUser(GenericTest):
     endpoint_follow = "users:followings-list"
-    endpoint_list = "users:followers"
+    endpoint_list = "users:followers-list"
 
     list_tests_count = 5
 

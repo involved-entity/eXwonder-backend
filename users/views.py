@@ -18,7 +18,7 @@ from users.serializers import (
     UserDetailSerializer,
     UserSerializer,
 )
-from users.services import get_user_login_token, make_2fa_authentication
+from users.services import get_user_login_token, make_2fa_authentication, remove_user_token
 from users.tasks import send_2fa_code_mail_message
 
 User = get_user_model()
@@ -26,18 +26,24 @@ User = get_user_model()
 
 @extend_schema_view(
     list=extend_schema(parameters=[
-        OpenApiParameter(name="search", description="Search username query. Length must be 3 and more. Required.", type=str,
-                         required=True)
+        OpenApiParameter(name="search", description="Search username query. Length must be 3 and more.", type=str),
+        OpenApiParameter(name="username", description="Username hard.", type=str)
     ]),
     create=extend_schema(request=UserSerializer),
     update=extend_schema(request=UserSerializer),
     retrieve=extend_schema(request=None, responses={
         status.HTTP_200_OK: UserSerializer
     }),
+    my=extend_schema(request=None, responses={
+        status.HTTP_200_OK: UserDetailSerializer
+    }),
     login=extend_schema(request=AuthTokenSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
         status.HTTP_202_ACCEPTED: DetailedCodeSerializer,
         status.HTTP_400_BAD_REQUEST: None
+    }),
+    logout=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None
     }),
     two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
@@ -62,9 +68,12 @@ class UserViewSet(
 
     def get_queryset(self):
         if self.action == 'list':   # noqa
-            query = self.request.query_params.get("search", None)
-            if not query or len(query) < 3:
+            query = self.request.query_params.get("search", '')
+            username = self.request.query_params.get("username", None)
+            if len(query) < 3 and not username:
                 return User.objects.none()
+            elif username:
+                return User.objects.filter(username=username)
             return User.objects.filter(username__startswith=query)
 
         return self.queryset
@@ -92,6 +101,11 @@ class UserViewSet(
             "token": get_user_login_token(user)
         }, status=status.HTTP_200_OK)
 
+    @action(methods=["get"], detail=False, url_name="logout", permission_classes=(permissions.IsAuthenticated,))
+    def logout(self, request: Request) -> Response:
+        remove_user_token(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(methods=["post"], detail=False, url_name="2fa")
     def two_factor_authentication(self, request: Request) -> Response:
         serializer = TwoFactorAuthenticationCodeSerializer(data=request.data)
@@ -118,11 +132,6 @@ class UserViewSet(
         status.HTTP_201_CREATED: FollowingSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }),
-    list=extend_schema(request=None, responses={
-        status.HTTP_200_OK: FollowingSerializer
-    }, parameters=[
-        OpenApiParameter(name="search", description="Search username query.", type=str)
-    ]),
     disfollow=extend_schema(request=FollowingSerializer, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_400_BAD_REQUEST: None
@@ -130,16 +139,10 @@ class UserViewSet(
 )
 class FollowingsViewSet(
     mixins.CreateModelMixin,
-    mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
     serializer_class = FollowingSerializer
     permission_classes = permissions.IsAuthenticated,
-
-    def get_queryset(self):
-        query = self.request.query_params.get("search", None)
-        queryset = self.request.user.following.select_related("following")
-        return queryset if not query else queryset.filter(following__username__startswith=query)
 
     def create(self, request, *args, **kwargs):
         following = get_object_or_404(User, pk=request.data.get("following", 0))
@@ -172,7 +175,9 @@ class FollowingsViewSet(
     list=extend_schema(request=None, responses={
         status.HTTP_200_OK: FollowingSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    })
+    }, parameters=[
+        OpenApiParameter(name="search", description="Search username query", type=str)
+    ])
 )
 class FollowingsUserAPIView(generics.ListAPIView):
     serializer_class = FollowingSerializer
@@ -180,17 +185,32 @@ class FollowingsUserAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
-        return user.following.select_related("following")
-
+        query = self.request.query_params.get("search", None)                                                                                                     
+        queryset = user.following.select_related("following")                                                                                        
+        return queryset if not query else queryset.filter(following__username__startswith=query)
 
 @extend_schema_view(
     list=extend_schema(request=None, responses={
         status.HTTP_200_OK: FollowingSerializer,
-    })
+    }),
+    followers_count=extend_schema(request=None, responses={
+        status.HTTP_200_OK: None,
+        status.HTTP_404_NOT_FOUND: None
+    }, parameters=[
+        OpenApiParameter(name="id", description="User id.", type=int, required=True)
+    ])
 )
-class FollowersAPIView(generics.ListAPIView):
+class FollowersViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
     serializer_class = FollowerSerializer
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
         return self.request.user.followers.select_related("follower")
+
+    @action(methods=["get"], detail=False, url_name="followers-count", url_path="user")
+    def followers_count(self, request: Request) -> Response:
+        user = get_object_or_404(User, pk=self.request.query_params.get("id", 0))
+        return Response({"count": user.followers.count()}, status=status.HTTP_200_OK)

@@ -21,3 +21,8 @@ def get_user_login_token(user: User) -> str:
     token, _ = Token.objects.get_or_create(user=user)  # noqa
 
     return token.key
+
+
+def remove_user_token(user: User) -> None:
+    Token.objects.filter(user=user).delete()
+
