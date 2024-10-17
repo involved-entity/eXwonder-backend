@@ -127,6 +127,6 @@ class CommentViewSet(
         if self.action == "list":
             serializer = PostIDSerializer(data=self.request.query_params)
             serializer.is_valid(raise_exception=True)
-            return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.filter()  # noqa
+            return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.select_related("author")  # noqa
         elif self.action == "destroy":
             return Comment.objects.filter()   # noqa

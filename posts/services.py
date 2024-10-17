@@ -35,7 +35,7 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
 
 
 def get_full_posts_queryset(queryset: QuerySet) -> QuerySet:
-    return (queryset.annotate(likes_count=Count("likes"), comments_count=Count("comments"))   # noqa
+    return (queryset.annotate(likes_count=Count("likes", distinct=True), comments_count=Count("comments", distinct=True))   # noqa
             .prefetch_related("images").select_related("author"))
 
 

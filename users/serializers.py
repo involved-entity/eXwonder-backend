@@ -7,6 +7,8 @@ from rest_framework import serializers
 
 from users.forms import PasswordResetForm
 from users.models import Follow
+from users.tasks import make_center_crop
+from users.services import PathImageTypeEnum
 
 User = get_user_model()
 
@@ -40,11 +42,16 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
+        is_avatar_updated = validated_data.get("avatar", instance.avatar) != instance.avatar
         instance.email = validated_data.get("email", instance.email)
         instance.avatar = validated_data.get("avatar", instance.avatar)
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
         instance.save()
+
+        if is_avatar_updated:
+            make_center_crop.delay(str(instance.avatar), PathImageTypeEnum.AVATAR)
+
         return instance
 
 

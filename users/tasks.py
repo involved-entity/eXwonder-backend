@@ -1,4 +1,7 @@
 import typing
+import os
+from PIL.Image import Image
+from PIL.Image import open as open_image
 
 from celery import shared_task
 from django.conf import settings
@@ -7,6 +10,8 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+
+from users.services import get_upload_crop_path, PathImageTypeEnum
 
 User = get_user_model()
 
@@ -64,23 +69,23 @@ def send_reset_password_mail(
     return
 
 
-# @shared_task
-# def make_center_crop(avatar_path: str) -> None:
-#     image_full_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / avatar_path)
-#     image = open_image(os.path.join(image_full_path))
-#     new_crop_image_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / get_upload_crop_path(avatar_path))
-#     _center_crop(image).save(new_crop_image_path)
-#     return
-#
-#
-# def _center_crop(img: Image) -> Image:
-#     width, height = img.size
-#     if width / height == 1:
-#         return img
-#
-#     left = (width - min(width, height)) / 2
-#     top = (height - min(width, height)) / 2
-#     right = (width + min(width, height)) / 2
-#     bottom = (height + min(width, height)) / 2
-#
-#     return img.crop((int(left), int(top), int(right), int(bottom)))
+@shared_task
+def make_center_crop(image_path: str, image_type: PathImageTypeEnum) -> None:
+    image_full_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / image_type / image_path)
+    image = open_image(os.path.join(image_full_path))
+    new_crop_image_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / get_upload_crop_path(image_path, image_type))
+    _center_crop(image).save(new_crop_image_path)
+    return
+
+
+def _center_crop(img: Image) -> Image:
+    width, height = img.size
+    if width / height == 1:
+        return img
+
+    left = (width - min(width, height)) / 2
+    top = (height - min(width, height)) / 2
+    right = (width + min(width, height)) / 2
+    bottom = (height + min(width, height)) / 2
+
+    return img.crop((int(left), int(top), int(right), int(bottom)))

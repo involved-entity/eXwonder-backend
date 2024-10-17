@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = Env()
 Env.read_env(os.path.join(BASE_DIR, ".env"))
 
+HOST = env("HOST", default="http://localhost:8000/")
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(", ")
@@ -170,6 +171,8 @@ TOKEN_EXP_TIME = timedelta(days=30)
 LAST_LOGIN_UPDATE_TIME = timedelta(hours=3)
 TWO_FACTOR_AUTHENTICATION_CODE_LENGTH = 5
 TWO_FACTOR_AUTHENTICATION_CODE_LIVETIME = 60 * 10   # seconds
+
+CROPPED_IMAGE_POSTFIX = '_crop'
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
