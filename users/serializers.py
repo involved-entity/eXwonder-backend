@@ -19,14 +19,31 @@ class UserDefaultSerializer(serializers.ModelSerializer):
         fields = "id", "username", "avatar"
 
 
-class UserCustomSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    username = serializers.CharField()
-    avatar = serializers.CharField()
-    posts_count = serializers.IntegerField(allow_null=True)
-    is_followed = serializers.BooleanField(allow_null=True)
-    followers_count = serializers.IntegerField(allow_null=True)
-    followings_count = serializers.IntegerField(allow_null=True)
+class UserCustomSerializer(serializers.ModelSerializer):
+    posts_count = serializers.IntegerField()
+    is_followed = serializers.BooleanField()
+    followers_count = serializers.IntegerField()
+    followings_count = serializers.IntegerField()
+
+    class Meta:
+        model = User
+        fields = 'id', 'username', 'avatar', 'posts_count', 'is_followed', 'followers_count', 'followings_count'
+        extra_kwargs = {
+            'posts_count': {"allow_null": True},
+            'is_followed': {"allow_null": True},
+            'followers_count': {"allow_null": True},
+            'followings_count': {"allow_null": True}
+        }
+
+
+#class UserCustomSerializer(serializers.Serializer):
+    #id = serializers.IntegerField()
+    #username = serializers.CharField()
+    #avatar = serializers.CharField()
+    #posts_count = serializers.IntegerField(allow_null=True)
+    #is_followed = serializers.BooleanField(allow_null=True)
+    #followers_count = serializers.IntegerField(allow_null=True)
+    #followings_count = serializers.IntegerField(allow_null=True)
 
 
 class UserDetailSerializer(serializers.ModelSerializer):

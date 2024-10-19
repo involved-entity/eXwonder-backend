@@ -38,7 +38,7 @@ def get_full_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
     return (queryset
             .annotate(likes_count=Count("likes", distinct=True),
                       comments_count=Count("comments", distinct=True),
-                      is_liked=Count("likes", distinct=True, filter=Q(author=request.user)))
+                      is_liked=Count("likes", distinct=True, filter=Q(likes__author=request.user)))
             .prefetch_related("images").select_related("author"))
 
 

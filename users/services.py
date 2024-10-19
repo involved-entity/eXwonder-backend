@@ -51,7 +51,7 @@ def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optio
 
     annotate = {
         "posts_count": Count('posts', distinct=True) if 'posts_count' in fields else None,
-        "is_followed": Count('followers', distinct=True, filter=Q(pk=user.id)) if 'is_followed' in fields
+        "is_followed": Count('followers', distinct=True, filter=Q(followers__follower__pk=user.id)) if 'is_followed' in fields
         else None,
         "followers_count": Count('followers', distinct=True) if 'followers_count' in fields else None,
         "followings_count": Count('following', distinct=True) if 'followings_count' in fields else None

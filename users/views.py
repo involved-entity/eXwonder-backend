@@ -42,7 +42,7 @@ User = get_user_model()
     logout=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None
     }, description="Endpoint to log out."),
-    two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
+        two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
     }, description="Endpoint to send 2FA code to log in.")
@@ -204,13 +204,15 @@ class GetUserInfoAPIView(views.APIView):
     @extend_schema(request=None, responses={
         status.HTTP_200_OK: UserCustomSerializer,
     }, parameters=[
+        OpenApiParameter(name='username', description="Username of user.", type=str, required=True),
         OpenApiParameter(name='fields', description="Fields in response. Valid values is posts_count, "
-                                                    "is_followed, followers_count, followings_count, all.", type=str)
+                                                    "is_followed, followers_count, followings_count, all.", type=str,
+                                                    required=True)
     ], description="Endpoint to get info about some user.")
-    def get(self, request: Request, pk: int) -> Response:
+    def get(self, request: Request) -> Response:
         queryset = User.objects.filter()
         fields = request.query_params.get("fields", '')
-        queryset = queryset.filter(pk=pk)
+        queryset = queryset.filter(username=request.query_params.get("username", ''))
         if fields != 'all':
             fields = fields.split(',')
         else:
