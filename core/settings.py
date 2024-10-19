@@ -150,7 +150,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'eXwonder',
     'DESCRIPTION': '',
-    'VERSION': '1.1.0',
+    'VERSION': '1.2.0',
 }
 
 REST_AUTH = {

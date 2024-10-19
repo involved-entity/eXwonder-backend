@@ -41,7 +41,7 @@ class TestPostsUser(AssertPaginatedResponseMixin, GenericTest):
             self.register_post(client, author)
 
         client.force_authenticate(instance)
-        url = f"{reverse_lazy(self.endpoint_list)}?user={author.id}"
+        url = f"{reverse_lazy(self.endpoint_list)}?user={author.username}"
         return client.get(url)
 
     def assert_case_test(self, response: Response, *args) -> None:

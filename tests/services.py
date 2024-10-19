@@ -55,7 +55,9 @@ class FollowTestService(RegisterObjectsMixin):
                 url = reverse_lazy(self.endpoint_list, kwargs={"pk": user.pk})
                 client.force_authenticate()
                 return url, self.register_users(client, 1)
-            case _:
+            case FollowTestMode.FOLLOWINGS:
+                return reverse_lazy(self.endpoint_list, kwargs={"pk": user.pk}), user
+            case FollowTestMode.FOLLOWERS:
                 return reverse_lazy(self.endpoint_list), user
 
     def __check_and_assert_follows(self, client: APIClient, user: User) -> None:

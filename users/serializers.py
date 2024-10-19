@@ -7,16 +7,26 @@ from rest_framework import serializers
 
 from users.forms import PasswordResetForm
 from users.models import Follow
-from users.tasks import make_center_crop
 from users.services import PathImageTypeEnum
+from users.tasks import make_center_crop
 
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserDefaultSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "id", "username", "avatar"
+
+
+class UserCustomSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    avatar = serializers.CharField()
+    posts_count = serializers.IntegerField(allow_null=True)
+    is_followed = serializers.BooleanField(allow_null=True)
+    followers_count = serializers.IntegerField(allow_null=True)
+    followings_count = serializers.IntegerField(allow_null=True)
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -55,27 +65,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
-class PasswordResetSerializer(PasswordResetSerializerCore):
-    def get_email_options(self) -> typing.Dict:
-        return {
-            "subject_template_name": 'users/mails/reset_password_body.html',
-            "email_template_name": 'users/mails/reset_password_subject.html'
-        }
-
-    @property
-    def password_reset_form_class(self) -> typing.Type[PasswordResetForm]:
-        return PasswordResetForm
-
-
-class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
-    auth_code = serializers.CharField(
-        max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
-        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
-    )
-
-
 class FollowerSerializer(serializers.ModelSerializer):
-    follower = UserSerializer(read_only=True)
+    follower = UserDefaultSerializer(read_only=True)
 
     class Meta:
         model = Follow
@@ -83,7 +74,7 @@ class FollowerSerializer(serializers.ModelSerializer):
 
 
 class FollowingSerializer(serializers.ModelSerializer):
-    following = UserSerializer(read_only=True)
+    following = UserDefaultSerializer(read_only=True)
 
     class Meta:
         model = Follow
@@ -107,3 +98,22 @@ class TokenSerializer(serializers.Serializer):
 class DetailedCodeSerializer(serializers.Serializer):
     detail = serializers.CharField()
     code = serializers.CharField(max_length=32)
+
+
+class PasswordResetSerializer(PasswordResetSerializerCore):
+    def get_email_options(self) -> typing.Dict:
+        return {
+            "subject_template_name": 'users/mails/reset_password_body.html',
+            "email_template_name": 'users/mails/reset_password_subject.html'
+        }
+
+    @property
+    def password_reset_form_class(self) -> typing.Type[PasswordResetForm]:
+        return PasswordResetForm
+
+
+class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
+    auth_code = serializers.CharField(
+        max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
+        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
+    )

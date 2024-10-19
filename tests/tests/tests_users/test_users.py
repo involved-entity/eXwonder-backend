@@ -49,8 +49,8 @@ class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
         super().make_test(api_client)
 
     def __generate_random_search_users(self, users_count: int) -> typing.Tuple[typing.Any, ...]:
-        return tuple(self.User.stub(username="searchuser" + ''.join(secrets.choice(string.ascii_letters) for i in range(5)))
-                     for i in range(users_count))
+        return tuple(self.User.stub(username="searchuser" + ''.join(secrets.choice(string.ascii_letters)
+                                                                    for i in range(5))) for i in range(users_count))
 
     def case_test(self, client: APIClient, instance: User) -> Response:
         users = self.User.stub_batch(self.list_tests_count - 2)
@@ -66,35 +66,27 @@ class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
         User.objects.filter(username__startswith="sea").delete()
 
 
-class TestUsersPermissions(GenericTest):
-    endpoint_list = "users:account-list"
-    endpoint_detail = "users:account-detail"
+class TestUsersFull(AssertResponseMixin, GenericTest):
+    endpoint_list = 'users:full-user'
 
-    def test_users_permissions(self, api_client):
+    def test_users_full(self, api_client):
         super().make_test(api_client)
 
-    def case_test(self, client: APIClient, instance: User) -> None:
-        self.send_endpoint_detail_request(client, status.HTTP_403_FORBIDDEN, pk=instance.pk)
-        client.force_authenticate(instance)
-        self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=instance.pk)
-
-
-class TestUsersRetrieve(GenericTest):
-    endpoint_list = "users:account-list"
-    endpoint_detail = "users:account-detail"
-
-    def test_users_retrieve(self, api_client):
-        super().make_test(api_client)
-
-    def case_test(self, client: APIClient, instance: User) -> None:
-        client.force_authenticate(instance)
+    def case_test(self, client: APIClient, instance: User) -> Response:
         user_for_check = random.choice(User.objects.filter())
-        self.check_user_data(client, user_for_check)
+        self.register_post(client, user_for_check)
+        client.force_authenticate(instance)
+        return client.get(f"{reverse_lazy(self.endpoint_list, kwargs={'pk': user_for_check.id})}?fields=all")
+
+    def assert_case_test(self, response: Response, *args) -> None:
+        self.assert_response(response, needed_keys=(
+            'id', 'username', 'avatar', 'posts_count', 'is_followed', 'followers_count', 'followings_count'
+        ))
 
 
 class TestUsersUpdate(GenericTest):
     endpoint_list = "users:account-list"
-    endpoint_detail = "users:account-detail"
+    endpoint_detail = "users:full-user"
 
     def test_users_update(self, api_client):
         super().make_test(api_client)

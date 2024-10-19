@@ -4,7 +4,7 @@ import pytz
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db.models import Count, F, QuerySet
+from django.db.models import Count, F, Q, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, status
@@ -34,8 +34,11 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-def get_full_posts_queryset(queryset: QuerySet) -> QuerySet:
-    return (queryset.annotate(likes_count=Count("likes", distinct=True), comments_count=Count("comments", distinct=True))   # noqa
+def get_full_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
+    return (queryset
+            .annotate(likes_count=Count("likes", distinct=True),
+                      comments_count=Count("comments", distinct=True),
+                      is_liked=Count("likes", distinct=True, filter=Q(author=request.user)))
             .prefetch_related("images").select_related("author"))
 
 
@@ -50,47 +53,37 @@ def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> Qu
         if request.user.penultimate_login:
             res_queryset = res_queryset.filter(time_added__gt=request.user.penultimate_login)
 
-        res_queryset = get_full_posts_queryset(res_queryset.order_by("-id"))
+        res_queryset = get_full_posts_queryset(request, res_queryset.order_by("-id"))
         cache.set(key, res_queryset, settings.USER_UPDATES_CACHE_TIME)
 
     return res_queryset
 
 
-def filter_posts_queryset_by_recent(queryset: QuerySet) -> QuerySet:
+def filter_posts_queryset_by_recent(request: Request, queryset: QuerySet) -> QuerySet:
     key = settings.POSTS_RECENT_TOP_CACHE_NAME
     res_queryset = cache.get(key)
     if not res_queryset:
-        res_queryset = get_full_posts_queryset(queryset.order_by("-id")[:50])
+        res_queryset = get_full_posts_queryset(request, queryset.order_by("-id")[:50])
         cache.set(key, res_queryset, settings.POSTS_RECENT_TOP_CACHE_TIME)
     return res_queryset
 
 
-def filter_posts_queryset_by_likes(queryset):
+def filter_posts_queryset_by_likes(request: Request, queryset):
     key = settings.POSTS_LIKED_TOP_CACHE_NAME
     res_queryset = cache.get(key)
     if not res_queryset:
-        res_queryset = get_full_posts_queryset(queryset.order_by(F("likes_count").desc())[:50])
+        res_queryset = get_full_posts_queryset(request, queryset.order_by(F("likes_count").desc())[:50])
         cache.set(key, res_queryset)
     return res_queryset
 
 
-def filter_posts_queryset_by_author(request: Request, queryset: QuerySet) -> QuerySet:
-    user = request.query_params.get("user", None)
-    key = settings.USER_RELATED_CACHE_NAME_SEP + settings.USER_POSTS_CACHE_NAME
-
-    if user and user.isnumeric():   # noqa
-        key = user + key
-        res_queryset = cache.get(key)
-        if not res_queryset:
-            user = get_object_or_404(User, pk=int(user))
-            res_queryset = get_full_posts_queryset(queryset.filter(author=user).order_by("-id"))
-            cache.set(key, res_queryset)
+def filter_posts_queryset_by_author(request: Request, queryset: QuerySet, user: typing.Optional[User] = None) \
+        -> QuerySet:
+    if user:
+        user = get_object_or_404(User, username=user)
+        res_queryset = get_full_posts_queryset(request, queryset.filter(author=user).order_by("-id"))
     else:
-        key = str(request.user.pk) + key
-        res_queryset = cache.get(key)
-        if not res_queryset:
-            res_queryset = get_full_posts_queryset(queryset.filter(author=request.user).order_by("-id"))
-            cache.set(key, res_queryset)
+        res_queryset = get_full_posts_queryset(request, queryset.filter(author=request.user).order_by("-id"))
 
     return res_queryset
 
@@ -99,8 +92,8 @@ def filter_posts_queryset_by_top(request: Request, queryset: QuerySet) -> typing
     top = request.query_params.get("top", None)
 
     if top and top in ("likes", "recent", "updates"):
-        res_queryset = filter_posts_queryset_by_likes(queryset) if top == "likes" else (
-            filter_posts_queryset_by_recent(queryset) if top == "recent" else (
+        res_queryset = filter_posts_queryset_by_likes(request, queryset) if top == "likes" else (
+            filter_posts_queryset_by_recent(request, queryset) if top == "recent" else (
                 filter_posts_queryset_by_updates(request, queryset)
             )
         )

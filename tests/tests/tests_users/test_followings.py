@@ -33,7 +33,7 @@ class TestFollowingsDisfollow(IterableFollowingRelationsMixin, GenericTest):
 
     def case_test(self, client: APIClient, instance: typing.Tuple) -> typing.Tuple[Response, User]:
         client.force_authenticate(instance[0])
-        return client.delete(reverse_lazy(self.endpoint_disfollow), data={"following": instance[1].pk}), instance[0]
+        return client.post(reverse_lazy(self.endpoint_disfollow), data={"following": instance[1].pk}), instance[0]
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -49,7 +49,7 @@ class TestFollowingsOfUser(GenericTest):
 
     service = FollowTestService(
         endpoint_list,
-        endpoint_list,
+        "users:followings-user",
         list_tests_count,
         FollowTestMode.FOLLOWINGS
     )

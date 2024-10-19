@@ -1,9 +1,11 @@
-import secrets
-import string
 import enum
 import os
+import secrets
+import string
+import typing
 
 from django.conf import settings
+from django.db.models import Count, Q, QuerySet
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.base import SessionBase
 from rest_framework.authtoken.models import Token
@@ -41,3 +43,20 @@ def get_user_login_token(user: User) -> str:
 
 def remove_user_token(user: User) -> None:
     Token.objects.filter(user=user).delete()   # noqa
+
+
+def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optional[typing.List] = None) -> QuerySet:
+    if not fields:
+        fields = ['posts_count', 'is_followed', 'followers_count', 'followings_count']
+
+    annotate = {
+        "posts_count": Count('posts', distinct=True) if 'posts_count' in fields else None,
+        "is_followed": Count('followers', distinct=True, filter=Q(pk=user.id)) if 'is_followed' in fields
+        else None,
+        "followers_count": Count('followers', distinct=True) if 'followers_count' in fields else None,
+        "followings_count": Count('following', distinct=True) if 'followings_count' in fields else None
+    }
+
+    queryset = queryset.annotate(**{key: value for key, value in annotate.items() if value})
+
+    return queryset.order_by('-id' if 'followers_count' not in fields else '-followers_count')

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from rest_framework import generics, mixins, permissions, status, viewsets
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import generics, mixins, permissions, status, views, viewsets
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -16,9 +16,10 @@ from users.serializers import (
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserDetailSerializer,
-    UserSerializer,
+    UserDefaultSerializer,
+    UserCustomSerializer
 )
-from users.services import get_user_login_token, make_2fa_authentication, remove_user_token
+from users.services import get_user_login_token, make_2fa_authentication, remove_user_token, annotate_users_queryset
 from users.tasks import send_2fa_code_mail_message
 
 User = get_user_model()
@@ -27,34 +28,29 @@ User = get_user_model()
 @extend_schema_view(
     list=extend_schema(parameters=[
         OpenApiParameter(name="search", description="Search username query. Length must be 3 and more.", type=str),
-        OpenApiParameter(name="username", description="Username hard.", type=str)
-    ]),
-    create=extend_schema(request=UserSerializer),
-    update=extend_schema(request=UserSerializer),
-    retrieve=extend_schema(request=None, responses={
-        status.HTTP_200_OK: UserSerializer
-    }),
+    ], description="Endpoint to search users by username."),
+    create=extend_schema(request=UserDefaultSerializer, description="Endpoint to create new user."),
+    update=extend_schema(request=UserDefaultSerializer, description="Endpoint to update your user."),
     my=extend_schema(request=None, responses={
         status.HTTP_200_OK: UserDetailSerializer
-    }),
+    }, description="Endpoint to get info about you."),
     login=extend_schema(request=AuthTokenSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
         status.HTTP_202_ACCEPTED: DetailedCodeSerializer,
         status.HTTP_400_BAD_REQUEST: None
-    }),
+    }, description="Endpoint to log in."),
     logout=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None
-    }),
+    }, description="Endpoint to log out."),
     two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
-    })
+    }, description="Endpoint to send 2FA code to log in.")
 )
 class UserViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
-    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
     serializer_class = UserDetailSerializer
@@ -62,19 +58,17 @@ class UserViewSet(
     permission_classes = UserPermission,
 
     def get_serializer_class(self, *args, **kwargs):
-        if self.action in ("retrieve", "list"):   # noqa
-            return UserSerializer
+        if self.action == 'list':   # noqa
+            return UserCustomSerializer
         return self.serializer_class
 
     def get_queryset(self):
         if self.action == 'list':   # noqa
             query = self.request.query_params.get("search", '')
-            username = self.request.query_params.get("username", None)
-            if len(query) < 3 and not username:
+            if len(query) < 3:
                 return User.objects.none()
-            elif username:
-                return User.objects.filter(username=username)
-            return User.objects.filter(username__startswith=query)
+            queryset = User.objects.filter(username__startswith=query)
+            return annotate_users_queryset(self.request.user, queryset)
 
         return self.queryset
 
@@ -131,11 +125,11 @@ class UserViewSet(
     create=extend_schema(request=FollowingSerializer, responses={
         status.HTTP_201_CREATED: FollowingSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to follow on user."),
     disfollow=extend_schema(request=FollowingSerializer, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_400_BAD_REQUEST: None
-    })
+    }, description="Endpoint to disfollow from user.")
 )
 class FollowingsViewSet(
     mixins.CreateModelMixin,
@@ -157,7 +151,7 @@ class FollowingsViewSet(
         serializer.save(follower=self.request.user, following=following)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(methods=["delete"], detail=False, url_name="disfollow")
+    @action(methods=["post"], detail=False, url_name="disfollow")
     def disfollow(self, request: Request) -> Response:
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -177,7 +171,7 @@ class FollowingsViewSet(
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, parameters=[
         OpenApiParameter(name="search", description="Search username query", type=str)
-    ])
+    ], description="Endpoint to get user followings and search it.")
 )
 class FollowingsUserAPIView(generics.ListAPIView):
     serializer_class = FollowingSerializer
@@ -185,20 +179,15 @@ class FollowingsUserAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
-        query = self.request.query_params.get("search", None)                                                                                                     
-        queryset = user.following.select_related("following")                                                                                        
+        query = self.request.query_params.get("search", None)
+        queryset = user.following.select_related("following")
         return queryset if not query else queryset.filter(following__username__startswith=query)
+
 
 @extend_schema_view(
     list=extend_schema(request=None, responses={
         status.HTTP_200_OK: FollowingSerializer,
-    }),
-    followers_count=extend_schema(request=None, responses={
-        status.HTTP_200_OK: None,
-        status.HTTP_404_NOT_FOUND: None
-    }, parameters=[
-        OpenApiParameter(name="id", description="User id.", type=int, required=True)
-    ])
+    }, description="Endpoint to get your followers.")
 )
 class FollowersViewSet(
     mixins.ListModelMixin,
@@ -210,7 +199,25 @@ class FollowersViewSet(
     def get_queryset(self):
         return self.request.user.followers.select_related("follower")
 
-    @action(methods=["get"], detail=False, url_name="followers-count", url_path="user")
-    def followers_count(self, request: Request) -> Response:
-        user = get_object_or_404(User, pk=self.request.query_params.get("id", 0))
-        return Response({"count": user.followers.count()}, status=status.HTTP_200_OK)
+
+class GetUserInfoAPIView(views.APIView):
+    @extend_schema(request=None, responses={
+        status.HTTP_200_OK: UserCustomSerializer,
+    }, parameters=[
+        OpenApiParameter(name='fields', description="Fields in response. Valid values is posts_count, "
+                                                    "is_followed, followers_count, followings_count, all.", type=str)
+    ], description="Endpoint to get info about some user.")
+    def get(self, request: Request, pk: int) -> Response:
+        queryset = User.objects.filter()
+        fields = request.query_params.get("fields", '')
+        queryset = queryset.filter(pk=pk)
+        if fields != 'all':
+            fields = fields.split(',')
+        else:
+            fields = None
+
+        queryset = annotate_users_queryset(request.user, queryset, fields)
+        user = queryset.first()
+        serialized_user = UserCustomSerializer(user)
+
+        return Response(serialized_user.data, status=status.HTTP_200_OK)

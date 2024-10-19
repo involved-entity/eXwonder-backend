@@ -21,24 +21,26 @@ User = get_user_model()
         status.HTTP_201_CREATED: PostSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
         status.HTTP_403_FORBIDDEN: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to create post."),
     list=extend_schema(request=None, parameters=[
         OpenApiParameter(name="user", description="Author of posts (username). Default is request sender.", type=str),
-        OpenApiParameter(name="top", description="Valid values is 'likes', 'recent' and 'updates'. Filter posts by top. "
+        OpenApiParameter(name="top", description="Filter posts by top. "
+                                                 "Valid values is 'likes', 'recent' and 'updates'. "
                                                  "Cant be used with 'user'.", type=str)
     ], responses={
         status.HTTP_200_OK: PostSerializer,
         status.HTTP_403_FORBIDDEN: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to get posts of user or you or some posts tops."),
     retrieve=extend_schema(request=None, responses={
         status.HTTP_200_OK: PostSerializer,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to get post info."),
     destroy=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    })
+    }, description="Endpoint to delete your post.")
 )
 class PostViewSet(
     mixins.CreateModelMixin,
@@ -55,15 +57,13 @@ class PostViewSet(
         queryset = Post.objects.filter()   # noqa
         queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
         if not has_filtered:
-            queryset = filter_posts_queryset_by_author(self.request, queryset)
+            queryset = filter_posts_queryset_by_author(self.request, queryset,
+                                                       self.request.query_params.get("user", None))
         return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
         key = settings.POSTS_RECENT_TOP_CACHE_NAME
-        cache.delete(key)
-
-        key = str(self.request.user.pk) + settings.USER_RELATED_CACHE_NAME_SEP + settings.USER_POSTS_CACHE_NAME
         cache.delete(key)
 
 
@@ -72,11 +72,11 @@ class PostViewSet(
         status.HTTP_201_CREATED: LikeSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to like some post."),
     destroy=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    })
+    }, description="Endpoint to delete like from post.")
 )
 class LikeViewSet(
     CreateModelCustomMixin,
@@ -99,19 +99,19 @@ class LikeViewSet(
         status.HTTP_201_CREATED: CommentSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to create comment to post."),
     list=extend_schema(request=None, parameters=[
         OpenApiParameter(name="post_id", description="Post id to get comments.", type=int)
     ], responses={
         status.HTTP_200_OK: CommentSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    }),
+    }, description="Endpoint to get comments of post."),
     destroy=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
-    })
+    }, description="Endpoint to delete your comment.")
 )
 class CommentViewSet(
     CreateModelCustomMixin,

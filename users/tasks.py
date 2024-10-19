@@ -1,7 +1,5 @@
-import typing
 import os
-from PIL.Image import Image
-from PIL.Image import open as open_image
+import typing
 
 from celery import shared_task
 from django.conf import settings
@@ -10,8 +8,10 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from PIL.Image import Image
+from PIL.Image import open as open_image
 
-from users.services import get_upload_crop_path, PathImageTypeEnum
+from users.services import PathImageTypeEnum, get_upload_crop_path
 
 User = get_user_model()
 

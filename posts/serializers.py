@@ -3,13 +3,13 @@ import urllib.parse
 from datetime import datetime
 
 import pytz
-from rest_framework import serializers
 from django.conf import settings
+from rest_framework import serializers
 
 from posts.models import Comment, Like, Post, PostImage
-from users.serializers import UserSerializer
-from users.tasks import make_center_crop
+from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
+from users.tasks import make_center_crop
 
 
 def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Optional[str] = 'time_added') \
@@ -35,16 +35,17 @@ class PostImageSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = UserDefaultSerializer(read_only=True)
     images = PostImageSerializer(many=True, read_only=True)
     time_added = serializers.SerializerMethodField(read_only=True)
 
     likes_count = serializers.IntegerField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Post
-        fields = "id", "author", "signature", "time_added", "images", "likes_count", "comments_count"
+        fields = "id", "author", "signature", "time_added", "images", "likes_count", "comments_count", "is_liked"
 
     def validate(self, attrs):
         if "image0" in list(self.context["request"].data.keys()):
@@ -90,7 +91,7 @@ class LikeSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = UserDefaultSerializer(read_only=True)
 
     class Meta:
         model = Comment

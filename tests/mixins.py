@@ -87,8 +87,8 @@ class RegisterPostMixin(ProxyFactories):
         image_2 = os.path.join(settings.STATICFILES_DIRS[0], settings.TEST_IMAGES_DIR, IMAGES_FOR_TEST_NAMES[1])
         with open(image_1, "rb") as image_1:
             with open(image_2, "rb") as image_2:
-                data["image1"] = image_1
-                data["image2"] = image_2
+                data["image0"] = image_1
+                data["image1"] = image_2
                 response = client.post(reverse_lazy(self.REGISTER_POSTS_ENDPOINT), data=data)
                 assert response.status_code == status.HTTP_201_CREATED
         client.force_authenticate()
