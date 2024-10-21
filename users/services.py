@@ -5,9 +5,9 @@ import string
 import typing
 
 from django.conf import settings
-from django.db.models import Count, Q, QuerySet
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.base import SessionBase
+from django.db.models import Count, Q, QuerySet
 from rest_framework.authtoken.models import Token
 
 User = get_user_model()

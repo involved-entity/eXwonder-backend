@@ -34,38 +34,42 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-def get_full_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
+def annotate_with_user_data_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
+    return (queryset
+            .annotate(is_liked=Count("likes", distinct=True, filter=Q(likes__author=request.user)),
+                      is_commented=Count("comments", distinct=True, filter=Q(comments__author=request.user))))
+
+
+def annotate_likes_and_comments_count_posts_queryset(queryset: QuerySet) -> QuerySet:
     return (queryset
             .annotate(likes_count=Count("likes", distinct=True),
-                      comments_count=Count("comments", distinct=True),
-                      is_liked=Count("likes", distinct=True, filter=Q(likes__author=request.user)),
-                      is_commented=Count("comments", distinct=True, filter=Q(comments__author=request.user)))
+                      comments_count=Count("comments", distinct=True))
             .prefetch_related("images").select_related("author"))
 
 
+def get_full_annotated_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
+    queryset = annotate_likes_and_comments_count_posts_queryset(queryset)
+    return annotate_with_user_data_posts_queryset(request, queryset)
+
+
 def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> QuerySet:
-    key = str(request.user.pk) + settings.USER_RELATED_CACHE_NAME_SEP + settings.USER_UPDATES_CACHE_NAME
-    res_queryset = cache.get(key)
-    if res_queryset is None:
-        res_queryset = queryset.filter(
-            author__in=(following.following for following in request.user.following.select_related("following")),
-            time_added__lt=timezone.now().replace(tzinfo=pytz.utc),
-        )
-        if request.user.penultimate_login:
-            res_queryset = res_queryset.filter(time_added__gt=request.user.penultimate_login)
+    res_queryset = queryset.filter(
+        author__in=(following.following for following in request.user.following.select_related("following")),
+        time_added__lt=timezone.now().replace(tzinfo=pytz.utc),
+    )
+    if request.user.penultimate_login:
+        res_queryset = res_queryset.filter(time_added__gt=request.user.penultimate_login)
 
-        res_queryset = get_full_posts_queryset(request, res_queryset.order_by("-id"))
-        cache.set(key, res_queryset, settings.USER_UPDATES_CACHE_TIME)
-
-    return res_queryset
+    return get_full_annotated_posts_queryset(request, res_queryset.order_by("-id"))
 
 
 def filter_posts_queryset_by_recent(request: Request, queryset: QuerySet) -> QuerySet:
     key = settings.POSTS_RECENT_TOP_CACHE_NAME
     res_queryset = cache.get(key)
     if not res_queryset:
-        res_queryset = get_full_posts_queryset(request, queryset.order_by("-id")[:50])
+        res_queryset = annotate_likes_and_comments_count_posts_queryset(queryset.order_by("-id")[:50])
         cache.set(key, res_queryset, settings.POSTS_RECENT_TOP_CACHE_TIME)
+    res_queryset = annotate_with_user_data_posts_queryset(request, res_queryset)
     return res_queryset
 
 
@@ -73,8 +77,9 @@ def filter_posts_queryset_by_likes(request: Request, queryset):
     key = settings.POSTS_LIKED_TOP_CACHE_NAME
     res_queryset = cache.get(key)
     if not res_queryset:
-        res_queryset = get_full_posts_queryset(request, queryset.order_by(F("likes_count").desc())[:50])
+        res_queryset = annotate_likes_and_comments_count_posts_queryset(queryset.order_by(F("likes_count").desc())[:50])
         cache.set(key, res_queryset)
+    res_queryset = annotate_with_user_data_posts_queryset(request, res_queryset)
     return res_queryset
 
 
@@ -82,9 +87,9 @@ def filter_posts_queryset_by_author(request: Request, queryset: QuerySet, user: 
         -> QuerySet:
     if user:
         user = get_object_or_404(User, username=user)
-        res_queryset = get_full_posts_queryset(request, queryset.filter(author=user).order_by("-id"))
+        res_queryset = get_full_annotated_posts_queryset(request, queryset.filter(author=user).order_by("-id"))
     else:
-        res_queryset = get_full_posts_queryset(request, queryset.filter(author=request.user).order_by("-id"))
+        res_queryset = get_full_annotated_posts_queryset(request, queryset.filter(author=request.user).order_by("-id"))
 
     return res_queryset
 
