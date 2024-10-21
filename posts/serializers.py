@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pytz
 from django.conf import settings
+from django.utils.timesince import timesince
 from rest_framework import serializers
 
 from posts.models import Comment, Like, Post, PostImage
@@ -16,7 +17,7 @@ def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Opt
         -> typing.Dict:
     dt = pytz.timezone(timezone).localize(datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
     return {
-        attribute_name: (dt + dt.utcoffset()).strftime("%d/%m/%Y %H:%M"),
+        attribute_name: timesince(dt + dt.utcoffset()),
         "timezone": timezone
     }
 
