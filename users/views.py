@@ -186,7 +186,7 @@ class FollowingsUserAPIView(generics.ListAPIView):
 
 @extend_schema_view(
     list=extend_schema(request=None, responses={
-        status.HTTP_200_OK: FollowingSerializer,
+        status.HTTP_200_OK: FollowerSerializer,
     }, description="Endpoint to get your followers.")
 )
 class FollowersViewSet(

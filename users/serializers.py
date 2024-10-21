@@ -36,16 +36,6 @@ class UserCustomSerializer(serializers.ModelSerializer):
         }
 
 
-#class UserCustomSerializer(serializers.Serializer):
-    #id = serializers.IntegerField()
-    #username = serializers.CharField()
-    #avatar = serializers.CharField()
-    #posts_count = serializers.IntegerField(allow_null=True)
-    #is_followed = serializers.BooleanField(allow_null=True)
-    #followers_count = serializers.IntegerField(allow_null=True)
-    #followings_count = serializers.IntegerField(allow_null=True)
-
-
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
