@@ -94,11 +94,15 @@ class LikeSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserDefaultSerializer(read_only=True)
+    time_added = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = "id", "author", "post", "comment"
-        read_only_fields = "post",
+        fields = "id", "author", "post", "comment", "time_added"
+        read_only_fields = "post", "time_added"
+
+    def get_time_added(self, comment): 
+        return datetime_to_timezone(comment.time_added, self.context["request"].user.timezone)
 
 
 class PostIDSerializer(serializers.Serializer):
