@@ -12,14 +12,22 @@ from users.permissions import UserPermission
 from users.serializers import (
     DetailedCodeSerializer,
     FollowerSerializer,
+    FollowerCreateSerializer,
     FollowingSerializer,
+    FollowingCreateSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserCustomSerializer,
     UserDefaultSerializer,
     UserDetailSerializer,
 )
-from users.services import annotate_users_queryset, get_user_login_token, make_2fa_authentication, remove_user_token
+from users.services import (
+    annotate_follows_queryset,
+    annotate_users_queryset,
+    get_user_login_token,
+    make_2fa_authentication,
+    remove_user_token,
+)
 from users.tasks import send_2fa_code_mail_message
 
 User = get_user_model()
@@ -122,11 +130,11 @@ class UserViewSet(
 
 
 @extend_schema_view(
-    create=extend_schema(request=FollowingSerializer, responses={
-        status.HTTP_201_CREATED: FollowingSerializer,
+    create=extend_schema(request=FollowingCreateSerializer, responses={
+        status.HTTP_201_CREATED: FollowingCreateSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, description="Endpoint to follow on user."),
-    disfollow=extend_schema(request=FollowingSerializer, responses={
+    disfollow=extend_schema(request=FollowingCreateSerializer, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_400_BAD_REQUEST: None
     }, description="Endpoint to disfollow from user.")
@@ -135,7 +143,7 @@ class FollowingsViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet
 ):
-    serializer_class = FollowingSerializer
+    serializer_class = FollowingCreateSerializer
     permission_classes = permissions.IsAuthenticated,
 
     def create(self, request, *args, **kwargs):
@@ -180,8 +188,10 @@ class FollowingsUserAPIView(generics.ListAPIView):
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
         query = self.request.query_params.get("search", None)
-        queryset = user.following.select_related("following")
-        return queryset if not query else queryset.filter(following__username__startswith=query)
+        queryset = user.following
+        queryset = queryset if not query else queryset.filter(following__username__startswith=query)
+        queryset = annotate_follows_queryset(self.request.user, queryset, 'following')
+        return queryset
 
 
 @extend_schema_view(
@@ -197,7 +207,8 @@ class FollowersViewSet(
     permission_classes = permissions.IsAuthenticated,
 
     def get_queryset(self):
-        return self.request.user.followers.select_related("follower")
+        queryset = self.request.user.followers
+        return annotate_follows_queryset(self.request.user, queryset, 'follower')
 
 
 class GetUserInfoAPIView(views.APIView):

@@ -42,6 +42,7 @@ class Comment(models.Model):
     author = models.ForeignKey(User, related_name="comments", on_delete=models.CASCADE)
     comment = models.TextField(max_length=2048, validators=(MinLengthValidator(10),))
     post = models.ForeignKey(Post, related_name="comments", on_delete=models.CASCADE)
+    time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = "-id",

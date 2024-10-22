@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
   title: eXwonder
-  version: 1.1.0
+  version: 1.2.0
 paths:
   /api/v1/account/account/:
     get:
       operationId: account_account_list
+      description: Endpoint to search users by username.
       parameters:
       - name: page
         required: false
@@ -18,11 +19,6 @@ paths:
         schema:
           type: string
         description: Search username query. Length must be 3 and more.
-      - in: query
-        name: username
-        schema:
-          type: string
-        description: Username hard.
       tags:
       - account
       security:
@@ -33,23 +29,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedUserList'
+                $ref: '#/components/schemas/PaginatedUserCustomList'
           description: ''
     post:
       operationId: account_account_create
+      description: Endpoint to create new user.
       tags:
       - account
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
         required: true
       security:
       - cookieAuth: []
@@ -62,29 +59,9 @@ paths:
                 $ref: '#/components/schemas/UserDetail'
           description: ''
   /api/v1/account/account/{id}/:
-    get:
-      operationId: account_account_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Пользователь.
-        required: true
-      tags:
-      - account
-      security:
-      - cookieAuth: []
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: ''
     put:
       operationId: account_account_update
+      description: Endpoint to update your user.
       parameters:
       - in: path
         name: id
@@ -98,13 +75,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserDefault'
         required: true
       security:
       - cookieAuth: []
@@ -151,6 +128,7 @@ paths:
   /api/v1/account/account/login/:
     post:
       operationId: account_account_login_create
+      description: Endpoint to log in.
       tags:
       - account
       requestBody:
@@ -186,6 +164,7 @@ paths:
   /api/v1/account/account/logout/:
     get:
       operationId: account_account_logout_retrieve
+      description: Endpoint to log out.
       tags:
       - account
       security:
@@ -197,6 +176,7 @@ paths:
   /api/v1/account/account/my/:
     get:
       operationId: account_account_my_retrieve
+      description: Endpoint to get info about you.
       tags:
       - account
       security:
@@ -212,6 +192,7 @@ paths:
   /api/v1/account/account/two_factor_authentication/:
     post:
       operationId: account_account_two_factor_authentication_create
+      description: Endpoint to send 2FA code to log in.
       tags:
       - account
       requestBody:
@@ -245,6 +226,7 @@ paths:
   /api/v1/account/followers/:
     get:
       operationId: account_followers_list
+      description: Endpoint to get your followers.
       parameters:
       - name: page
         required: false
@@ -262,44 +244,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFollowingList'
+                $ref: '#/components/schemas/PaginatedFollowerList'
           description: ''
-  /api/v1/account/followers/user/:
-    get:
-      operationId: account_followers_user_retrieve
-      parameters:
-      - in: query
-        name: id
-        schema:
-          type: integer
-        description: User id.
-        required: true
-      tags:
-      - account
-      security:
-      - cookieAuth: []
-      - tokenAuth: []
-      responses:
-        '200':
-          description: No response body
-        '404':
-          description: No response body
   /api/v1/account/followings/:
     post:
       operationId: account_followings_create
+      description: Endpoint to follow on user.
       tags:
       - account
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Following'
+              $ref: '#/components/schemas/FollowingCreate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Following'
+              $ref: '#/components/schemas/FollowingCreate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Following'
+              $ref: '#/components/schemas/FollowingCreate'
+        required: true
       security:
       - cookieAuth: []
       - tokenAuth: []
@@ -308,7 +272,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Following'
+                $ref: '#/components/schemas/FollowingCreate'
           description: ''
         '404':
           content:
@@ -317,10 +281,23 @@ paths:
                 $ref: '#/components/schemas/DetailedCode'
           description: ''
   /api/v1/account/followings/disfollow/:
-    delete:
-      operationId: account_followings_disfollow_destroy
+    post:
+      operationId: account_followings_disfollow_create
+      description: Endpoint to disfollow from user.
       tags:
       - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FollowingCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FollowingCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FollowingCreate'
+        required: true
       security:
       - cookieAuth: []
       - tokenAuth: []
@@ -457,9 +434,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/RestAuthDetail'
           description: ''
+  /api/v1/account/user/:
+    get:
+      operationId: account_user_retrieve
+      description: Endpoint to get info about some user.
+      parameters:
+      - in: query
+        name: fields
+        schema:
+          type: string
+        description: Fields in response. Valid values is posts_count, is_followed,
+          followers_count, followings_count, all.
+        required: true
+      - in: query
+        name: username
+        schema:
+          type: string
+        description: Username of user.
+        required: true
+      tags:
+      - account
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCustom'
+          description: ''
   /api/v1/posts/comments/:
     get:
       operationId: posts_comments_list
+      description: Endpoint to get comments of post.
       parameters:
       - name: page
         required: false
@@ -498,6 +507,7 @@ paths:
           description: ''
     post:
       operationId: posts_comments_create
+      description: Endpoint to create comment to post.
       tags:
       - posts
       requestBody:
@@ -537,6 +547,7 @@ paths:
   /api/v1/posts/comments/{id}/:
     delete:
       operationId: posts_comments_destroy
+      description: Endpoint to delete your comment.
       parameters:
       - in: path
         name: id
@@ -567,6 +578,7 @@ paths:
   /api/v1/posts/likes/:
     post:
       operationId: posts_likes_create
+      description: Endpoint to like some post.
       tags:
       - posts
       requestBody:
@@ -606,6 +618,7 @@ paths:
   /api/v1/posts/likes/{post_id}/:
     delete:
       operationId: posts_likes_destroy
+      description: Endpoint to delete like from post.
       parameters:
       - in: path
         name: post_id
@@ -630,6 +643,7 @@ paths:
   /api/v1/posts/posts/:
     get:
       operationId: posts_posts_list
+      description: Endpoint to get posts of user or you or some posts tops.
       parameters:
       - name: page
         required: false
@@ -641,8 +655,8 @@ paths:
         name: top
         schema:
           type: string
-        description: Valid values is 'likes', 'recent' and 'updates'. Filter posts
-          by top. Cant be used with 'user'.
+        description: Filter posts by top. Valid values is 'likes', 'recent' and 'updates'.
+          Cant be used with 'user'.
       - in: query
         name: user
         schema:
@@ -668,6 +682,7 @@ paths:
           description: ''
     post:
       operationId: posts_posts_create
+      description: Endpoint to create post.
       tags:
       - posts
       requestBody:
@@ -706,6 +721,7 @@ paths:
   /api/v1/posts/posts/{id}/:
     get:
       operationId: posts_posts_retrieve
+      description: Endpoint to get post info.
       parameters:
       - in: path
         name: id
@@ -724,6 +740,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
           description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
         '404':
           content:
             application/json:
@@ -732,6 +754,7 @@ paths:
           description: ''
     delete:
       operationId: posts_posts_destroy
+      description: Endpoint to delete your post.
       parameters:
       - in: path
         name: id
@@ -930,7 +953,7 @@ components:
           readOnly: true
         author:
           allOf:
-          - $ref: '#/components/schemas/User'
+          - $ref: '#/components/schemas/UserDefault'
           readOnly: true
         post:
           type: integer
@@ -955,6 +978,29 @@ components:
       required:
       - code
       - detail
+    Follower:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        follower:
+          $ref: '#/components/schemas/UserDefault'
+        posts_count:
+          type: integer
+        is_followed:
+          type: boolean
+        followers_count:
+          type: integer
+        followings_count:
+          type: integer
+      required:
+      - follower
+      - followers_count
+      - followings_count
+      - id
+      - is_followed
+      - posts_count
     Following:
       type: object
       properties:
@@ -962,9 +1008,30 @@ components:
           type: integer
           readOnly: true
         following:
-          allOf:
-          - $ref: '#/components/schemas/User'
+          $ref: '#/components/schemas/UserDefault'
+        posts_count:
+          type: integer
+        is_followed:
+          type: boolean
+        followers_count:
+          type: integer
+        followings_count:
+          type: integer
+      required:
+      - followers_count
+      - following
+      - followings_count
+      - id
+      - is_followed
+      - posts_count
+    FollowingCreate:
+      type: object
+      properties:
+        id:
+          type: integer
           readOnly: true
+        following:
+          type: integer
       required:
       - following
       - id
@@ -1007,6 +1074,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
+    PaginatedFollowerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Follower'
     PaginatedFollowingList:
       type: object
       required:
@@ -1053,7 +1143,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Post'
-    PaginatedUserList:
+    PaginatedUserCustomList:
       type: object
       required:
       - count
@@ -1075,7 +1165,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/User'
+            $ref: '#/components/schemas/UserCustom'
     PasswordChange:
       type: object
       properties:
@@ -1163,7 +1253,7 @@ components:
           readOnly: true
         author:
           allOf:
-          - $ref: '#/components/schemas/User'
+          - $ref: '#/components/schemas/UserDefault'
           readOnly: true
         signature:
           type: string
@@ -1182,11 +1272,19 @@ components:
         comments_count:
           type: integer
           readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
+        is_commented:
+          type: boolean
+          readOnly: true
       required:
       - author
       - comments_count
       - id
       - images
+      - is_commented
+      - is_liked
       - likes_count
       - time_added
     PostID:
@@ -1207,9 +1305,13 @@ components:
           type: string
           format: uri
           readOnly: true
+        image_crop:
+          type: string
+          readOnly: true
       required:
       - id
       - image
+      - image_crop
     RestAuthDetail:
       type: object
       properties:
@@ -1234,7 +1336,39 @@ components:
           minLength: 5
       required:
       - auth_code
-    User:
+    UserCustom:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Имя пользователя
+          description: Не более 16 символов, не менее 5. Буквы, цифры, @/./+/-/_.
+          pattern: ^[\w.@+-]+$
+          maxLength: 16
+          minLength: 5
+        avatar:
+          type: string
+          format: uri
+          title: Аватарка
+        posts_count:
+          type: integer
+        is_followed:
+          type: boolean
+        followers_count:
+          type: integer
+        followings_count:
+          type: integer
+      required:
+      - followers_count
+      - followings_count
+      - id
+      - is_followed
+      - posts_count
+      - username
+    UserDefault:
       type: object
       properties:
         id:

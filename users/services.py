@@ -7,8 +7,10 @@ import typing
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.base import SessionBase
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from rest_framework.authtoken.models import Token
+
+from users.models import Follow
 
 User = get_user_model()
 
@@ -60,3 +62,17 @@ def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optio
     queryset = queryset.annotate(**{key: value for key, value in annotate.items() if value})
 
     return queryset.order_by('-id' if 'followers_count' not in fields else '-followers_count')
+
+
+def annotate_follows_queryset(user: User, queryset: QuerySet, mode: typing.Literal['follower'] | typing.Literal['following']) -> QuerySet:
+    queryset = queryset.prefetch_related(mode)
+    annotate = {
+        "posts_count": Count(mode + '__posts', distinct=True),
+        "is_followed": Exists(Follow.objects.filter(follower_id=user.pk, following_id=OuterRef(mode + '__pk'))),
+        "followers_count": Count(mode + '__followers', distinct=True),
+        "followings_count": Count(mode + '__following', distinct=True)
+    }
+
+    queryset = queryset.annotate(**annotate)
+
+    return queryset.order_by('-followers_count')

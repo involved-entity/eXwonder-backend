@@ -72,17 +72,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
-class FollowerSerializer(serializers.ModelSerializer):
-    follower = UserDefaultSerializer(read_only=True)
-
+class FollowerCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "id", "follower"
 
 
-class FollowingSerializer(serializers.ModelSerializer):
-    following = UserDefaultSerializer(read_only=True)
-
+class FollowingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = "id", "following"
@@ -96,6 +92,30 @@ class FollowingSerializer(serializers.ModelSerializer):
         if not filter.exists():
             return Follow.objects.create(follower=follower, following=following)   # noqa
         return filter.first()
+
+
+class FollowerSerializer(serializers.ModelSerializer):
+    follower = UserDefaultSerializer()
+    posts_count = serializers.IntegerField()
+    is_followed = serializers.BooleanField()
+    followers_count = serializers.IntegerField()
+    followings_count = serializers.IntegerField()
+
+    class Meta:
+        model = Follow
+        fields = "id", "follower", "posts_count", "is_followed", "followers_count", "followings_count"
+
+
+class FollowingSerializer(serializers.ModelSerializer):
+    following = UserDefaultSerializer()
+    posts_count = serializers.IntegerField()
+    is_followed = serializers.BooleanField()
+    followers_count = serializers.IntegerField()
+    followings_count = serializers.IntegerField()
+
+    class Meta:
+        model = Follow
+        fields = "id", "following", "posts_count", "is_followed", "followers_count", "followings_count"
 
 
 class TokenSerializer(serializers.Serializer):
