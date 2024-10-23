@@ -1,13 +1,14 @@
-from rest_framework.response import Response
-from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
-from rest_framework import status
-from django.urls import reverse_lazy
-from posts.models import Saved
-import pytest
 import json
 
-from tests import GenericTest, AssertContentKeysMixin, AssertResponseMixin
+import pytest
+from django.contrib.auth import get_user_model
+from django.urls import reverse_lazy
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.test import APIClient
+
+from posts.models import Saved
+from tests import AssertContentKeysMixin, AssertResponseMixin, GenericTest
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]

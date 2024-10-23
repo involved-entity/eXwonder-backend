@@ -64,7 +64,9 @@ def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optio
     return queryset.order_by('-id' if 'followers_count' not in fields else '-followers_count')
 
 
-def annotate_follows_queryset(user: User, queryset: QuerySet, mode: typing.Literal['follower'] | typing.Literal['following']) -> QuerySet:
+def annotate_follows_queryset(user: User, queryset: QuerySet,
+                              mode: typing.Literal['follower'] | typing.Literal['following']) -> QuerySet:
+    user = user if isinstance(user, User) else user[0]
     queryset = queryset.prefetch_related(mode)
     annotate = {
         "posts_count": Count(mode + '__posts', distinct=True),

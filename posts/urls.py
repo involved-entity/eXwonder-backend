@@ -9,7 +9,7 @@ router = SimpleRouter()
 router.register(r"posts", PostViewSet, basename="posts")
 router.register(r"post-likes", PostLikeViewSet, basename="likes")
 router.register(r"comments", CommentViewSet, basename="comments")
-router.register(f"saved", SavedViewSet, basename="saved")
+router.register("saved", SavedViewSet, basename="saved")
 
 urlpatterns = [
     path("", include(router.urls))

@@ -18,7 +18,8 @@ paths:
         name: search
         schema:
           type: string
-        description: Search username query. Length must be 3 and more.
+        description: Search username query. Length must be 3 and more. Required
+        required: true
       tags:
       - account
       security:
@@ -29,7 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedUserCustomList'
+                $ref: '#/components/schemas/PaginatedUserDefaultList'
           description: ''
     post:
       operationId: account_account_create
@@ -40,13 +41,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDefault'
+              $ref: '#/components/schemas/UserDetail'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserDefault'
+              $ref: '#/components/schemas/UserDetail'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserDefault'
+              $ref: '#/components/schemas/UserDetail'
         required: true
       security:
       - cookieAuth: []
@@ -56,74 +57,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetail'
+                $ref: '#/components/schemas/UserDefault'
           description: ''
-  /api/v1/account/account/{id}/:
-    put:
-      operationId: account_account_update
-      description: Endpoint to update your user.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Пользователь.
-        required: true
-      tags:
-      - account
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserDefault'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserDefault'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserDefault'
-        required: true
-      security:
-      - cookieAuth: []
-      - tokenAuth: []
-      responses:
-        '200':
+        '400':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetail'
-          description: ''
-    patch:
-      operationId: account_account_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this Пользователь.
-        required: true
-      tags:
-      - account
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserDetail'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserDetail'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedUserDetail'
-      security:
-      - cookieAuth: []
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserDetail'
+                $ref: '#/components/schemas/DetailedCode'
           description: ''
   /api/v1/account/account/login/:
     post:
@@ -222,6 +162,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DetailedCode'
+          description: ''
+  /api/v1/account/account/update-me/:
+    put:
+      operationId: account_account_update_me_update
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserDetail'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+          description: ''
+    patch:
+      operationId: account_account_update_me_partial_update
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserDetail'
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
           description: ''
   /api/v1/account/followers/:
     get:
@@ -575,9 +567,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailedCode'
           description: ''
-  /api/v1/posts/likes/:
+  /api/v1/posts/post-likes/:
     post:
-      operationId: posts_likes_create
+      operationId: posts_post_likes_create
       description: Endpoint to like some post.
       tags:
       - posts
@@ -601,7 +593,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Like'
+                $ref: '#/components/schemas/PostLike'
           description: ''
         '400':
           content:
@@ -615,16 +607,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailedCode'
           description: ''
-  /api/v1/posts/likes/{post_id}/:
+  /api/v1/posts/post-likes/{post_id}/:
     delete:
-      operationId: posts_likes_destroy
+      operationId: posts_post_likes_destroy
       description: Endpoint to delete like from post.
       parameters:
       - in: path
         name: post_id
         schema:
           type: integer
-        description: A unique integer value identifying this like.
+        description: A unique integer value identifying this post like.
         required: true
       tags:
       - posts
@@ -755,6 +747,88 @@ paths:
     delete:
       operationId: posts_posts_destroy
       description: Endpoint to delete your post.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
+  /api/v1/posts/saved/:
+    get:
+      operationId: posts_saved_list
+      description: Endpoint to view your saved posts.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - posts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSavedList'
+          description: ''
+    post:
+      operationId: posts_saved_create
+      description: Endpoint to add post to saved posts.
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostID'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostID'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostID'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
+  /api/v1/posts/saved/{id}/:
+    delete:
+      operationId: posts_saved_destroy
+      description: Endpoint to delete post from saved.
       parameters:
       - in: path
         name: id
@@ -962,11 +1036,15 @@ components:
           type: string
           minLength: 10
           maxLength: 2048
+        time_added:
+          type: string
+          readOnly: true
       required:
       - author
       - comment
       - id
       - post
+      - time_added
     DetailedCode:
       type: object
       properties:
@@ -1035,22 +1113,6 @@ components:
       required:
       - following
       - id
-    Like:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        author:
-          type: integer
-          readOnly: true
-        post:
-          type: integer
-          readOnly: true
-      required:
-      - author
-      - id
-      - post
     PaginatedCommentList:
       type: object
       required:
@@ -1143,7 +1205,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Post'
-    PaginatedUserCustomList:
+    PaginatedSavedList:
       type: object
       required:
       - count
@@ -1165,7 +1227,30 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/UserCustom'
+            $ref: '#/components/schemas/Saved'
+    PaginatedUserDefaultList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDefault'
     PasswordChange:
       type: object
       properties:
@@ -1312,6 +1397,22 @@ components:
       - id
       - image
       - image_crop
+    PostLike:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        post:
+          type: integer
+          readOnly: true
+      required:
+      - author
+      - id
+      - post
     RestAuthDetail:
       type: object
       properties:
@@ -1320,6 +1421,42 @@ components:
           readOnly: true
       required:
       - detail
+    Saved:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/UserDefault'
+          readOnly: true
+        post:
+          $ref: '#/components/schemas/Post'
+        time_added:
+          type: string
+          format: date-time
+          readOnly: true
+        likes_count:
+          type: integer
+          readOnly: true
+        comments_count:
+          type: integer
+          readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
+        is_commented:
+          type: boolean
+          readOnly: true
+      required:
+      - comments_count
+      - id
+      - is_commented
+      - is_liked
+      - likes_count
+      - owner
+      - time_added
     Token:
       type: object
       properties:

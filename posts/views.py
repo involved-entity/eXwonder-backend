@@ -7,10 +7,15 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from posts.models import Comment, PostLike, Post
-from posts.permissions import IsOwnerOrReadOnly, IsOwnerOrCreateOnly
-from posts.serializers import CommentSerializer, PostLikeSerializer, PostIDSerializer, PostSerializer, SavedSerializer
-from posts.services import CreateModelCustomMixin, filter_posts_queryset_by_author, filter_posts_queryset_by_top, get_full_annotated_posts_queryset
+from posts.models import Comment, Post, PostLike
+from posts.permissions import IsOwnerOrCreateOnly, IsOwnerOrReadOnly
+from posts.serializers import CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer
+from posts.services import (
+    CreateModelCustomMixin,
+    filter_posts_queryset_by_author,
+    filter_posts_queryset_by_top,
+    get_full_annotated_posts_queryset,
+)
 from users.serializers import DetailedCodeSerializer
 
 User = get_user_model()

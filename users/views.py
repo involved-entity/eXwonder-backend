@@ -12,9 +12,8 @@ from users.permissions import UserPermission
 from users.serializers import (
     DetailedCodeSerializer,
     FollowerSerializer,
-    FollowerCreateSerializer,
-    FollowingSerializer,
     FollowingCreateSerializer,
+    FollowingSerializer,
     TokenSerializer,
     TwoFactorAuthenticationCodeSerializer,
     UserCustomSerializer,
@@ -34,11 +33,20 @@ User = get_user_model()
 
 
 @extend_schema_view(
-    list=extend_schema(parameters=[
-        OpenApiParameter(name="search", description="Search username query. Length must be 3 and more.", type=str),
-    ], description="Endpoint to search users by username."),
-    create=extend_schema(request=UserDefaultSerializer, description="Endpoint to create new user."),
-    update=extend_schema(request=UserDefaultSerializer, description="Endpoint to update your user."),
+    list=extend_schema(request=None, parameters=[
+        OpenApiParameter(name="search", description="Search username query. Length must be 3 and more. Required",
+                         type=str, required=True),
+    ], responses={
+        status.HTTP_200_OK: UserDefaultSerializer,
+    }, description="Endpoint to search users by username."),
+    create=extend_schema(request=UserDetailSerializer, responses={
+        status.HTTP_201_CREATED: UserDefaultSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
+    }, description="Endpoint to create new user."),
+    update=extend_schema(request=UserDetailSerializer, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+    }, description="Endpoint to update your user."),
     my=extend_schema(request=None, responses={
         status.HTTP_200_OK: UserDetailSerializer
     }, description="Endpoint to get info about you."),
@@ -50,7 +58,7 @@ User = get_user_model()
     logout=extend_schema(request=None, responses={
         status.HTTP_204_NO_CONTENT: None
     }, description="Endpoint to log out."),
-        two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
+    two_factor_authentication=extend_schema(request=TwoFactorAuthenticationCodeSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
     }, description="Endpoint to send 2FA code to log in.")
@@ -58,7 +66,6 @@ User = get_user_model()
 class UserViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
     viewsets.GenericViewSet
 ):
     serializer_class = UserDetailSerializer
@@ -128,6 +135,13 @@ class UserViewSet(
             "code": "CODE_INVALID"
         }, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=["patch", "put"], detail=False, url_path="update-me", url_name="update")
+    def update_me(self, request: Request) -> Response:
+        serializer = self.serializer_class(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema_view(
     create=extend_schema(request=FollowingCreateSerializer, responses={
@@ -188,10 +202,8 @@ class FollowingsUserAPIView(generics.ListAPIView):
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs[self.lookup_url_kwarg])
         query = self.request.query_params.get("search", None)
-        queryset = user.following
-        queryset = queryset if not query else queryset.filter(following__username__startswith=query)
-        queryset = annotate_follows_queryset(self.request.user, queryset, 'following')
-        return queryset
+        queryset = user.following if not query else user.following.filter(following__username__startswith=query)
+        return annotate_follows_queryset(self.request.user, queryset, 'following')
 
 
 @extend_schema_view(

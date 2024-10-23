@@ -76,7 +76,7 @@ class TestUsersFull(AssertResponseMixin, GenericTest):
         user_for_check = random.choice(User.objects.filter())
         self.register_post(client, user_for_check)
         client.force_authenticate(instance)
-        return client.get(f"{reverse_lazy(self.endpoint_list, kwargs={'pk': user_for_check.id})}?fields=all")
+        return client.get(f'{reverse_lazy(self.endpoint_list)}?username={user_for_check.username}&fields=all')
 
     def assert_case_test(self, response: Response, *args) -> None:
         self.assert_response(response, needed_keys=(
@@ -86,21 +86,33 @@ class TestUsersFull(AssertResponseMixin, GenericTest):
 
 class TestUsersUpdate(GenericTest):
     endpoint_list = "users:account-list"
-    endpoint_detail = "users:full-user"
+    endpoint_detail = "users:account-my"
+    endpoint_update = "users:account-update"
 
     def test_users_update(self, api_client):
         super().make_test(api_client)
 
-    def case_test(self, client: APIClient, instance: User) -> None:
+    def case_test(self, client: APIClient, instance: User) -> typing.Tuple[Response, APIClient, User]:
         client.force_authenticate(instance)
         data = {
             "email": self.User.stub().email,
             "timezone": random.choice(pytz.common_timezones),
             "is_2fa_enabled": True
         }
-        kwargs = {"pk": instance.pk}
-        client.patch(reverse_lazy(self.endpoint_detail, kwargs=kwargs), data=data)
-        self.check_user_data(client, User.objects.get(username=instance.username))
+        return (client.patch(reverse_lazy(self.endpoint_update), data=data), client,
+                User.objects.get(username=instance.username))
+
+    def assert_case_test(self, response: Response, *args) -> None:
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        args[0].force_authenticate(args[1])
+        response = args[0].get(reverse_lazy(self.endpoint_detail))
+        content = json.loads(response.content)
+        assert content["id"] == args[1].pk
+        assert content["username"] == args[1].username
+        assert content["email"] == args[1].email
+        assert content["timezone"] == args[1].timezone
+        assert content["is_2fa_enabled"] == args[1].is_2fa_enabled
+        return content
 
 
 class TestUsersLogin(GenericTest):

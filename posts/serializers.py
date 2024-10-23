@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils.timesince import timesince
 from rest_framework import serializers
 
-from posts.models import Comment, PostLike, Post, PostImage, Saved
+from posts.models import Comment, Post, PostImage, PostLike, Saved
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
@@ -103,7 +103,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = "id", "author", "post", "comment", "time_added"
         read_only_fields = "post", "time_added"
 
-    def get_time_added(self, comment): 
+    def get_time_added(self, comment):
         return datetime_to_timezone(comment.time_added, self.context["request"].user.timezone)
 
 
