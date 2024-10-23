@@ -18,6 +18,8 @@ User = get_user_model()
 
 
 class CreateModelCustomMixin(mixins.CreateModelMixin):
+    author_field = 'author'
+
     def __get_and_validate_post_id(self, request: Request) -> int:
         serializer = PostIDSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -28,28 +30,43 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
         serializer = self.get_serializer(data=request.data)   # noqa
         serializer.is_valid(raise_exception=True)
         serializer.save(
-            author=request.user,
+            **{self.author_field: request.user},
             post=get_object_or_404(Post, pk=post_id)
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-def annotate_with_user_data_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
-    return (queryset
-            .annotate(is_liked=Count("likes", distinct=True, filter=Q(likes__author=request.user)),
-                      is_commented=Count("comments", distinct=True, filter=Q(comments__author=request.user))))
+def annotate_with_user_data_posts_queryset(request: Request, queryset: QuerySet,
+                                           annotated_field_prefix: typing.Optional[str] = None) -> QuerySet:
+    prefix = f"{annotated_field_prefix}__" if annotated_field_prefix else ''
+
+    annotate = {
+        'is_liked': (
+            Count(prefix + "likes", distinct=True, filter=Q(**{prefix + 'likes__author': request.user}))
+        ),
+        'is_commented': (
+            Count(prefix + "comments", distinct=True, filter=Q(**{prefix + 'comments__author': request.user}))
+        )
+    }
+    return queryset.annotate(**annotate)
 
 
-def annotate_likes_and_comments_count_posts_queryset(queryset: QuerySet) -> QuerySet:
-    return (queryset
-            .annotate(likes_count=Count("likes", distinct=True),
-                      comments_count=Count("comments", distinct=True))
-            .prefetch_related("images").select_related("author"))
+def annotate_likes_and_comments_count_posts_queryset(queryset: QuerySet,
+                                                     annotated_field_prefix: typing.Optional[str] = None) -> QuerySet:
+    prefix = f"{annotated_field_prefix}__" if annotated_field_prefix else ''
+
+    annotate = {
+        'likes_count': Count(prefix + 'likes', distinct=True),
+        'comments_count': Count(prefix + 'comments', distinct=True)
+    }
+
+    return queryset.annotate(**annotate).prefetch_related(prefix + "images").select_related(prefix + "author")
 
 
-def get_full_annotated_posts_queryset(request: Request, queryset: QuerySet) -> QuerySet:
-    queryset = annotate_likes_and_comments_count_posts_queryset(queryset)
-    return annotate_with_user_data_posts_queryset(request, queryset)
+def get_full_annotated_posts_queryset(request: Request, queryset: QuerySet,
+                                      annotated_field_prefix: typing.Optional[str] = None) -> QuerySet:
+    queryset = annotate_likes_and_comments_count_posts_queryset(queryset, annotated_field_prefix)
+    return annotate_with_user_data_posts_queryset(request, queryset, annotated_field_prefix)
 
 
 def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> QuerySet:

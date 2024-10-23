@@ -13,7 +13,8 @@ from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
 
-POST_NEEDED_FIELDS = "id", "author", "signature", "time_added", "images", "likes_count", "comments_count"
+POST_NEEDED_FIELDS = ("id", "author", "signature", "time_added", "images", "likes_count", "comments_count",
+                      "is_liked", "is_commented")
 
 
 class TestPostsCreation(GenericTest):

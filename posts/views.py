@@ -8,9 +8,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from posts.models import Comment, PostLike, Post
-from posts.permissions import IsOwnerOrReadOnly
-from posts.serializers import CommentSerializer, PostLikeSerializer, PostIDSerializer, PostSerializer
-from posts.services import CreateModelCustomMixin, filter_posts_queryset_by_author, filter_posts_queryset_by_top
+from posts.permissions import IsOwnerOrReadOnly, IsOwnerOrCreateOnly
+from posts.serializers import CommentSerializer, PostLikeSerializer, PostIDSerializer, PostSerializer, SavedSerializer
+from posts.services import CreateModelCustomMixin, filter_posts_queryset_by_author, filter_posts_queryset_by_top, get_full_annotated_posts_queryset
 from users.serializers import DetailedCodeSerializer
 
 User = get_user_model()
@@ -121,7 +121,7 @@ class CommentViewSet(
 ):
     serializer_class = CommentSerializer
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
-    lookup_url_kwarg = "id"
+    lookup_url_kwarg = 'id'
 
     def get_queryset(self):
         if self.action == "list":
@@ -130,3 +130,34 @@ class CommentViewSet(
             return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.select_related("author")  # noqa
         elif self.action == "destroy":
             return Comment.objects.filter()   # noqa
+
+
+@extend_schema_view(
+    list=extend_schema(request=None, responses={
+        status.HTTP_200_OK: SavedSerializer
+    }, description="Endpoint to view your saved posts."),
+    create=extend_schema(request=PostIDSerializer, responses={
+        status.HTTP_201_CREATED: None,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
+    }, description="Endpoint to add post to saved posts."),
+    destroy=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }, description="Endpoint to delete post from saved.")
+)
+class SavedViewSet(
+    CreateModelCustomMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    author_field = 'owner'
+
+    serializer_class = SavedSerializer
+    permission_classes = permissions.IsAuthenticated, IsOwnerOrCreateOnly
+    lookup_url_kwarg = 'id'
+
+    def get_queryset(self):
+        queryset = self.request.user.saved_posts.filter()
+        return get_full_annotated_posts_queryset(self.request, queryset, annotated_field_prefix='post')

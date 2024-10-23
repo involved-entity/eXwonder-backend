@@ -6,6 +6,7 @@ from tests.mixins import (
     IterableFollowingRelationsMixin,
     RegisterObjectsMixin,
     SendEndpointDetailRequestMixin,
+    AssertContentKeysMixin
 )
 from tests.services import FollowTestMode, FollowTestService
 
@@ -17,6 +18,7 @@ __all__ = [
     "IterableFollowingRelationsMixin",
     "AssertPaginatedResponseMixin",
     "AssertResponseMixin",
+    "AssertContentKeysMixin",
     "SendEndpointDetailRequestMixin",
     "CheckUserDataMixin"
 ]

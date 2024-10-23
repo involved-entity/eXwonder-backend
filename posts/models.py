@@ -65,7 +65,7 @@ class Saved(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-time_added",
+        ordering = "-time_added", "-id"
 
     def __str__(self):
         return f"Saved post {self.post.pk} by {self.owner.pk}"   # noqa

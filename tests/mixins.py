@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from posts.models import Comment, Post
+from posts.models import Comment, Post, Saved
 from tests.factories import CommentFactory, PostFactory, UserFactory
 
 User = get_user_model()
@@ -108,6 +108,8 @@ class RegisterLikeMixin(RegisterPostMixin):
 
 
 class RegisterCommentMixin(RegisterPostMixin):
+    REGISTER_COMMENTS_ENDPOINT: typing.Final = 'posts:comments-list'
+
     def register_comment(self, client: APIClient, author: User, post: typing.Optional[Post] = None) -> User:
         post_id = post.id if post else self.register_post(client, author).pk   # noqa
         client.force_authenticate(author)
@@ -115,13 +117,26 @@ class RegisterCommentMixin(RegisterPostMixin):
             "post_id": post_id,
             "comment": self.Comment.stub().comment
         }
-        response = client.post(reverse_lazy(self.endpoint_list), data=data)   # noqa
+        response = client.post(reverse_lazy(self.REGISTER_COMMENTS_ENDPOINT), data=data)   # noqa
         client.force_authenticate()
         assert response.status_code == status.HTTP_201_CREATED
         return Comment.objects.first()   # noqa
 
 
-class RegisterObjectsMixin(RegisterUsersMixin, RegisterLikeMixin, RegisterCommentMixin):
+class RegisterSavedPostMixin(RegisterPostMixin):
+    REGISTER_SAVED_POST_ENDPOINT: typing.Final = 'posts:saved-list'
+
+    def register_saved_post(self, client: APIClient, author: User) -> Saved:
+        post_id = self.register_post(client, author).pk
+        client.force_authenticate(author)
+        data = {"post_id": post_id}
+        response = client.post(reverse_lazy(self.REGISTER_SAVED_POST_ENDPOINT), data=data)
+        client.force_authenticate()
+        assert response.status_code == status.HTTP_201_CREATED
+        return Saved.objects.first()   # noqa
+
+
+class RegisterObjectsMixin(RegisterUsersMixin, RegisterLikeMixin, RegisterCommentMixin, RegisterSavedPostMixin):
     pass
 
 
@@ -149,12 +164,13 @@ class AssertContentKeysMixin(object):
 
 class AssertResponseMixin(AssertContentKeysMixin):
     def assert_response(self, response: Response, status__: typing.Optional[int] = status.HTTP_200_OK,
-                        needed_keys: typing.Optional[typing.Tuple] = None) -> typing.Dict:
-        content = json.loads(response.content)
+                        needed_keys: typing.Optional[typing.Tuple] = None) -> typing.Dict | None:
         assert response.status_code == status__
         if needed_keys:
+            content = json.loads(response.content)
             self.assert_keys(content, needed_keys)
-        return content
+            return content
+        return
 
 
 class AssertPaginatedResponseMixin(AssertResponseMixin):
