@@ -7,9 +7,9 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from posts.models import Comment, Like, Post
+from posts.models import Comment, PostLike, Post
 from posts.permissions import IsOwnerOrReadOnly
-from posts.serializers import CommentSerializer, LikeSerializer, PostIDSerializer, PostSerializer
+from posts.serializers import CommentSerializer, PostLikeSerializer, PostIDSerializer, PostSerializer
 from posts.services import CreateModelCustomMixin, filter_posts_queryset_by_author, filter_posts_queryset_by_top
 from users.serializers import DetailedCodeSerializer
 
@@ -69,7 +69,7 @@ class PostViewSet(
 
 @extend_schema_view(
     create=extend_schema(request=PostIDSerializer, responses={
-        status.HTTP_201_CREATED: LikeSerializer,
+        status.HTTP_201_CREATED: PostLikeSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, description="Endpoint to like some post."),
@@ -78,13 +78,13 @@ class PostViewSet(
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, description="Endpoint to delete like from post.")
 )
-class LikeViewSet(
+class PostLikeViewSet(
     CreateModelCustomMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
-    serializer_class = LikeSerializer
-    queryset = Like.objects.filter()   # noqa
+    serializer_class = PostLikeSerializer
+    queryset = PostLike.objects.filter()   # noqa
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     lookup_url_kwarg = "post_id"
 

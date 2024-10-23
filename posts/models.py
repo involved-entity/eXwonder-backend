@@ -30,12 +30,12 @@ class Post(models.Model):
         return f"{self.pk} post."
 
 
-class Like(models.Model):
+class PostLike(models.Model):
     author = models.ForeignKey(User, related_name="likes", on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name="likes", on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.author.pk} like for {self.post.pk}."   # noqa
+        return f"{self.author.pk} like for {self.post.pk} post."   # noqa
 
 
 class Comment(models.Model):
@@ -45,7 +45,27 @@ class Comment(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-id",
+        ordering = "-time_added",
 
     def __str__(self):
         return f"{self.author.pk} comment for {self.post.pk}."   # noqa
+
+
+class CommentLike(models.Model):
+    author = models.ForeignKey(User, related_name="comment_likes", on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, related_name="likes", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.author.pk} like for {self.post.pk} comment."   # noqa
+
+
+class Saved(models.Model):
+    owner = models.ForeignKey(User, related_name="saved_posts", on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name="saved_by", on_delete=models.CASCADE)
+    time_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = "-time_added",
+
+    def __str__(self):
+        return f"Saved post {self.post.pk} by {self.owner.pk}"   # noqa

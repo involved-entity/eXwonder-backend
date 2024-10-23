@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils.timesince import timesince
 from rest_framework import serializers
 
-from posts.models import Comment, Like, Post, PostImage
+from posts.models import Comment, PostLike, Post, PostImage
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
@@ -79,14 +79,14 @@ class PostSerializer(serializers.ModelSerializer):
         return datetime_to_timezone(post.time_added, self.context["request"].user.timezone)
 
 
-class LikeSerializer(serializers.ModelSerializer):
+class PostLikeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Like
+        model = PostLike
         fields = "id", "author", "post"
         read_only_fields = "author", "post"
 
     def create(self, validated_data):
-        like = Like.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
+        like = PostLike.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
         if like.exists():
             return like.first()
         return super().create(validated_data)

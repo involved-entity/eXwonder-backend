@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from posts.models import Like
+from posts.models import PostLike
 from tests import GenericTest
 
 User = get_user_model()
@@ -37,4 +37,4 @@ class TestLikesDelete(GenericTest):
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert Like.objects.filter().count() == 0  # noqa
+        assert PostLike.objects.filter().count() == 0  # noqa
