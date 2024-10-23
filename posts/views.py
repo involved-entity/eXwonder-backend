@@ -7,9 +7,11 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from posts.models import Comment, Post, PostLike
+from posts.models import Comment, Post, PostLike, CommentLike
 from posts.permissions import IsOwnerOrCreateOnly, IsOwnerOrReadOnly
-from posts.serializers import CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer
+from posts.serializers import (
+    CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer, CommentLikeSerializer, CommentIDSerializer
+)
 from posts.services import (
     CreateModelCustomMixin,
     filter_posts_queryset_by_author,
@@ -135,6 +137,34 @@ class CommentViewSet(
             return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.select_related("author")  # noqa
         elif self.action == "destroy":
             return Comment.objects.filter()   # noqa
+
+
+@extend_schema_view(
+    create=extend_schema(request=CommentIDSerializer, responses={
+        status.HTTP_201_CREATED: CommentLikeSerializer,
+        status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }, description="Endpoint to like some comment."),
+    destroy=extend_schema(request=None, responses={
+        status.HTTP_204_NO_CONTENT: None,
+        status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
+    }, description="Endpoint to delete like from comment.")
+)
+class CommentLikeViewSet(
+    CreateModelCustomMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = CommentLikeSerializer
+    queryset = CommentLike.objects.filter()   # noqa
+    permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
+    lookup_url_kwarg = "comment_id"
+    entity_model = Comment
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        comment_id = self.kwargs[self.lookup_url_kwarg]
+        get_object_or_404(Comment, pk=comment_id).likes.filter(author=request.user).delete()   # noqa
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(

@@ -7,31 +7,40 @@ from django.core.cache import cache
 from django.db.models import Count, F, Q, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, status
+from rest_framework import mixins, status, serializers
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from posts.models import Post
-from posts.serializers import PostIDSerializer
 
 User = get_user_model()
 
 
 class CreateModelCustomMixin(mixins.CreateModelMixin):
     author_field = 'author'
+    entity_model = Post
+    entity_field = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.entity_field = self.entity_model.__name__.lower()
 
     def __get_and_validate_post_id(self, request: Request) -> int:
-        serializer = PostIDSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return serializer.validated_data["post_id"]
+        if (
+            (not request.data.get(f"{self.entity_field}_id"))
+            or (not request.data.get(f"{self.entity_field}_id").isnumeric())
+            or (int(request.data.get(f"{self.entity_field}_id")) < 1)
+        ):
+            raise serializers.ValidationError()
+        return request.data[f"{self.entity_field}_id"]
 
     def create(self, request: Request, *args, **kwargs) -> Response:
-        post_id = self.__get_and_validate_post_id(request)
+        entity_pk = self.__get_and_validate_post_id(request)
         serializer = self.get_serializer(data=request.data)   # noqa
         serializer.is_valid(raise_exception=True)
         serializer.save(
             **{self.author_field: request.user},
-            post=get_object_or_404(Post, pk=post_id)
+            **{self.entity_field: get_object_or_404(self.entity_model, pk=entity_pk)}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
