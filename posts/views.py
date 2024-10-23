@@ -4,19 +4,19 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.request import Request
-from rest_framework.response import Response
 
 from posts.models import Comment, Post, PostLike, CommentLike
 from posts.permissions import IsOwnerOrCreateOnly, IsOwnerOrReadOnly
 from posts.serializers import (
-    CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer, CommentLikeSerializer, CommentIDSerializer
+    CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer,
+    CommentLikeSerializer, CommentIDSerializer
 )
 from posts.services import (
     CreateModelCustomMixin,
     filter_posts_queryset_by_author,
     filter_posts_queryset_by_top,
     get_full_annotated_posts_queryset,
+    BaseLikeViewSet
 )
 from users.serializers import DetailedCodeSerializer
 
@@ -85,20 +85,11 @@ class PostViewSet(
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, description="Endpoint to delete like from post.")
 )
-class PostLikeViewSet(
-    CreateModelCustomMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class PostLikeViewSet(BaseLikeViewSet):
     serializer_class = PostLikeSerializer
     queryset = PostLike.objects.filter()   # noqa
-    permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     lookup_url_kwarg = "post_id"
-
-    def destroy(self, request: Request, *args, **kwargs) -> Response:
-        post_id = self.kwargs[self.lookup_url_kwarg]
-        get_object_or_404(Post, pk=post_id).likes.filter(author=request.user).delete()   # noqa
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    entity_model = Post
 
 
 @extend_schema_view(
@@ -150,21 +141,11 @@ class CommentViewSet(
         status.HTTP_404_NOT_FOUND: DetailedCodeSerializer
     }, description="Endpoint to delete like from comment.")
 )
-class CommentLikeViewSet(
-    CreateModelCustomMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class CommentLikeViewSet(BaseLikeViewSet):
     serializer_class = CommentLikeSerializer
-    queryset = CommentLike.objects.filter()   # noqa
-    permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
+    queryset = CommentLike.objects.filter()  # noqa
     lookup_url_kwarg = "comment_id"
     entity_model = Comment
-
-    def destroy(self, request: Request, *args, **kwargs) -> Response:
-        comment_id = self.kwargs[self.lookup_url_kwarg]
-        get_object_or_404(Comment, pk=comment_id).likes.filter(author=request.user).delete()   # noqa
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
