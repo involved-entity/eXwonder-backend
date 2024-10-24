@@ -7,7 +7,8 @@ from posts.services.services import (
     filter_posts_queryset_by_author,
     filter_posts_queryset_by_likes,
     filter_posts_queryset_by_recent,
-    filter_posts_queryset_by_top
+    filter_posts_queryset_by_top,
+    annotate_likes_count_and_is_liked_comments_queryset
 )
 from posts.services.likes_helpers import BaseLikeViewSet
 
@@ -21,5 +22,6 @@ __all__ = [
     "filter_posts_queryset_by_likes",
     "filter_posts_queryset_by_recent",
     "filter_posts_queryset_by_top",
+    "annotate_likes_count_and_is_liked_comments_queryset",
     "BaseLikeViewSet"
 ]

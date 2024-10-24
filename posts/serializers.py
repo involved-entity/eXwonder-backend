@@ -98,9 +98,12 @@ class CommentSerializer(serializers.ModelSerializer):
     author = UserDefaultSerializer(read_only=True)
     time_added = serializers.SerializerMethodField()
 
+    likes_count = serializers.IntegerField()
+    is_liked = serializers.BooleanField()
+
     class Meta:
         model = Comment
-        fields = "id", "author", "post", "comment", "time_added"
+        fields = "id", "author", "post", "comment", "time_added", "likes_count", "is_liked"
         read_only_fields = "post", "time_added"
 
     def get_time_added(self, comment):

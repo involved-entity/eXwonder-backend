@@ -28,7 +28,6 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
     def __get_and_validate_post_id(self, request: Request) -> int:
         if (
             (not request.data.get(f"{self.entity_field}_id"))
-            or (not request.data.get(f"{self.entity_field}_id").isnumeric())
             or (int(request.data.get(f"{self.entity_field}_id")) < 1)
         ):
             raise serializers.ValidationError()
@@ -45,6 +44,14 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+def annotate_likes_count_and_is_liked_comments_queryset(request: Request, queryset: QuerySet) -> QuerySet:
+    annotate = {
+        'likes_count' : Count("likes", distinct=True),
+        'is_liked': Count("likes", distinct=True, filter=Q(likes__author=request.user))
+    }
+    return queryset.annotate(**annotate).order_by('-likes_count', '-time_added')
+
+
 def annotate_with_user_data_posts_queryset(request: Request, queryset: QuerySet,
                                            annotated_field_prefix: typing.Optional[str] = None) -> QuerySet:
     prefix = f"{annotated_field_prefix}__" if annotated_field_prefix else ''
@@ -55,6 +62,9 @@ def annotate_with_user_data_posts_queryset(request: Request, queryset: QuerySet,
         ),
         'is_commented': (
             Count(prefix + "comments", distinct=True, filter=Q(**{prefix + 'comments__author': request.user}))
+        ),
+        'is_saved': (
+            Count(prefix + 'saved_by', distinct=True, filter=Q(**{prefix + 'saved_by__owner': request.user}))
         )
     }
     return queryset.annotate(**annotate)

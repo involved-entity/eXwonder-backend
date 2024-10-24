@@ -18,7 +18,8 @@ from posts.services import (
     filter_posts_queryset_by_author,
     filter_posts_queryset_by_top,
     get_full_annotated_posts_queryset,
-    BaseLikeViewSet
+    BaseLikeViewSet,
+    annotate_likes_count_and_is_liked_comments_queryset
 )
 from users.serializers import DetailedCodeSerializer
 
@@ -127,7 +128,8 @@ class CommentViewSet(
         if self.action == "list":
             serializer = PostIDSerializer(data=self.request.query_params)
             serializer.is_valid(raise_exception=True)
-            return get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.select_related("author")  # noqa
+            queryset = get_object_or_404(Post, pk=serializer.validated_data["post_id"]).comments.select_related("author")  # noqa
+            return annotate_likes_count_and_is_liked_comments_queryset(self.request, queryset)
         elif self.action == "destroy":
             return Comment.objects.filter()   # noqa
 
