@@ -4,8 +4,10 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.request import Request
+from rest_framework.response import Response
 
-from posts.models import Comment, Post, PostLike, CommentLike
+from posts.models import Comment, Post, PostLike, CommentLike, Saved
 from posts.permissions import IsOwnerOrCreateOnly, IsOwnerOrReadOnly
 from posts.serializers import (
     CommentSerializer, PostIDSerializer, PostLikeSerializer, PostSerializer, SavedSerializer,
@@ -177,3 +179,8 @@ class SavedViewSet(
     def get_queryset(self):
         queryset = self.request.user.saved_posts.filter()
         return get_full_annotated_posts_queryset(self.request, queryset, annotated_field_prefix='post')
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        instance = Saved.objects.filter(owner=request.user, post=get_object_or_404(Post, pk=self.kwargs[self.lookup_url_kwarg]))
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

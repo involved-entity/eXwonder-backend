@@ -55,9 +55,9 @@ class TestSavedDestroy(AssertResponseMixin, GenericTest):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> Response:
-        saved = self.register_saved_post(client, instance)
+        post_id = self.register_saved_post(client, instance)
         client.force_authenticate(instance)
-        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={'id': saved.pk}))
+        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={'id': post_id}))
 
     def assert_case_test(self, response: Response, *args) -> None:
         self.assert_response(response, status.HTTP_204_NO_CONTENT)
