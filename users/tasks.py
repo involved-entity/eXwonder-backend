@@ -71,7 +71,7 @@ def send_reset_password_mail(
 
 @shared_task
 def make_center_crop(image_path: str, image_type: PathImageTypeEnum) -> None:
-    image_full_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / image_type / image_path)
+    image_full_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / image_path)
     image = open_image(os.path.join(image_full_path))
     new_crop_image_path = str(settings.BASE_DIR / settings.MEDIA_ROOT / get_upload_crop_path(image_path, image_type))
     _center_crop(image).save(new_crop_image_path)

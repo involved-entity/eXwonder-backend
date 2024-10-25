@@ -70,11 +70,12 @@ class PostSerializer(serializers.ModelSerializer):
             if key.startswith("image"):
                 instance = PostImage(image=value, post=post)
                 if key == 'image0':
-                    header_image = instance
-                post_images.append(PostImage(image=value, post=post))
+                    post_images.insert(0, instance)
+                else:
+                    post_images.append(instance)
 
-        PostImage.objects.bulk_create(post_images)   # noqa
-        make_center_crop.delay(str(header_image.image), PathImageTypeEnum.POST)
+        post_images = PostImage.objects.bulk_create(post_images)   # noqa
+        make_center_crop.delay(str(post_images[0].image), PathImageTypeEnum.POST)
         return post
 
     def get_time_added(self, post):

@@ -29,7 +29,7 @@ def make_2fa_authentication(session: SessionBase, user: User) -> str:
 
 
 def get_upload_crop_path(path: str, image_type: PathImageTypeEnum) -> str:
-    if path == settings.DEFAULT_USER_AVATAR_PATH:
+    if settings.DEFAULT_USER_AVATAR_PATH in path:
         return path
 
     file = os.path.basename(path)

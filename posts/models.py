@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 
 User = get_user_model()
 
@@ -16,6 +18,11 @@ class PostImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.post.pk}."   # noqa
+
+
+@receiver(pre_delete, sender=PostImage)
+def mymodel_delete(sender, instance, **kwargs):
+    instance.image.delete(False)
 
 
 class Post(models.Model):
