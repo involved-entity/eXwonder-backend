@@ -22,7 +22,7 @@ def send_mail_with_subject_and_body_as_html(
         recipient_mail: str,
         context: typing.Optional[typing.Dict] = None
 ) -> None:
-    subject = render_to_string(subject_template)
+    subject = render_to_string(subject_template).replace('\n', '')
     html_message = render_to_string(body_template, context)
     plain_message = strip_tags(html_message)
 

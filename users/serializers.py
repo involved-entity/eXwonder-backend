@@ -80,7 +80,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        print(validated_data)
         is_avatar_updated = validated_data.get("avatar", instance.avatar) != instance.avatar
         instance.email = validated_data.get("email", instance.email)
         instance.avatar = validated_data.get("avatar", instance.avatar)
@@ -92,6 +91,12 @@ class UserDetailSerializer(serializers.ModelSerializer):
             make_center_crop.delay(str(instance.avatar), PathImageTypeEnum.AVATAR)
 
         return instance
+
+
+class DetailedCodeSessionKeySerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    code = serializers.CharField()
+    session_key = serializers.CharField()
 
 
 class UserDetailTimezonesSerializer(serializers.Serializer):
@@ -171,3 +176,4 @@ class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
         max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
         min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
     )
+    session_key = serializers.CharField()

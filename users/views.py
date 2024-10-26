@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.contrib.sessions.backends.db import SessionStore
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, mixins, permissions, status, views, viewsets
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -20,7 +21,8 @@ from users.serializers import (
     UserCustomSerializer,
     UserDefaultSerializer,
     UserDetailSerializer,
-    UserDetailTimezonesSerializer
+    UserDetailTimezonesSerializer,
+    DetailedCodeSessionKeySerializer
 )
 from users.services import (
     annotate_follows_queryset,
@@ -54,7 +56,7 @@ User = get_user_model()
     }, description="Endpoint to get info about you."),
     login=extend_schema(request=AuthTokenSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
-        status.HTTP_202_ACCEPTED: DetailedCodeSerializer,
+        status.HTTP_202_ACCEPTED: DetailedCodeSessionKeySerializer,
         status.HTTP_400_BAD_REQUEST: None
     }, description="Endpoint to log in."),
     logout=extend_schema(request=None, responses={
@@ -103,12 +105,14 @@ class UserViewSet(
         user = serializer.validated_data["user"]
 
         if user.is_2fa_enabled and user.email:
-            code = make_2fa_authentication(request.session, request.user)
-            send_2fa_code_mail_message.delay(request.user.email, code)
+            code = make_2fa_authentication(request.session, user)
+            send_2fa_code_mail_message.delay(user.email, code)
+            request.session.create()
 
             return Response({
                 "code": "CODE_SENDED",
-                "detail": "2FA Code has been sended to your email."
+                "detail": "2FA Code has been sended to your email.",
+                "session_key": request.session.session_key
             }, status=status.HTTP_202_ACCEPTED)
 
         return Response({
@@ -120,23 +124,25 @@ class UserViewSet(
         remove_user_token(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=["post"], detail=False, url_name="2fa")
+    @action(methods=["post"], detail=False, url_name="2fa", url_path="two-factor-authentication")
     def two_factor_authentication(self, request: Request) -> Response:
         serializer = TwoFactorAuthenticationCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.validated_data["auth_code"]
 
-        if request.session.get("2fa_code", 0) == code:
-            pk = request.session["2fa_code_user_id"]
-            request.session.flush()
-            request.session.set_expiry(0)
+        session = SessionStore(session_key=serializer.validated_data['session_key'])
+
+        if session.get("2fa_code", 0) == code:
+            pk = session["2fa_code_user_id"]
+            session.flush()
+            session.set_expiry(0)
 
             return Response({
                 "token": get_user_login_token(get_object_or_404(User, pk=pk))
             }, status=status.HTTP_200_OK)
 
         return Response({
-            "detail": "This 2FA code is invalid. May be it has been expired, so regenerate a code.",
+            "detail": "This 2FA code is invalid. Regenerate it can help you.",
             "code": "CODE_INVALID"
         }, status=status.HTTP_400_BAD_REQUEST)
 

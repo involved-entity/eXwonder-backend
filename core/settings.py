@@ -61,7 +61,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "templates/")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,6 +125,8 @@ CACHES = {
     }
 }
 
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 USER_RELATED_CACHE_NAME_SEP = ":"
 USER_UPDATES_CACHE_NAME = "updates"
 USER_POSTS_CACHE_NAME = "posts"
@@ -141,8 +143,8 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        'rest_framework.authentication.SessionAuthentication',
-        "users.authentication.TokenAuthentication"
+        "users.authentication.TokenAuthentication",
+        'rest_framework.authentication.SessionAuthentication'
     ],
     "PAGE_SIZE": 50,
 }
