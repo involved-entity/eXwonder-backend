@@ -1,25 +1,37 @@
 import typing
+import urllib.parse
 
 from dj_rest_auth.serializers import PasswordResetSerializer as PasswordResetSerializerCore
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+import pytz
 
 from users.forms import PasswordResetForm
 from users.models import Follow
-from users.services import PathImageTypeEnum
+from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
 
 User = get_user_model()
 
 
+class UserAvatarField(serializers.ImageField):
+    def to_representation(self, value):
+        media_url = urllib.parse.urljoin(settings.HOST, settings.MEDIA_URL)
+        return urllib.parse.urljoin(media_url, get_upload_crop_path(str(value), PathImageTypeEnum.AVATAR))
+
+
 class UserDefaultSerializer(serializers.ModelSerializer):
+    avatar = UserAvatarField()
+
     class Meta:
         model = User
         fields = "id", "username", "avatar"
 
 
 class UserCustomSerializer(serializers.ModelSerializer):
+    avatar = UserAvatarField()
+
     posts_count = serializers.IntegerField()
     is_followed = serializers.BooleanField()
     followers_count = serializers.IntegerField()
@@ -37,6 +49,8 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    avatar = UserAvatarField()
+
     class Meta:
         model = User
         fields = "id", "username", "password", "email", "avatar", "timezone", "is_2fa_enabled"
@@ -46,6 +60,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "avatar": {"required": False},
             "timezone": {"required": False},
         }
+
+    def validate_timezone(self, value):
+        if value:
+            if value in pytz.common_timezones_set:
+                return value
+            raise serializers.ValidationError('Invalid timezone')
+        return value
 
     def create(self, validated_data):
         user = User(
@@ -59,6 +80,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
+        print(validated_data)
         is_avatar_updated = validated_data.get("avatar", instance.avatar) != instance.avatar
         instance.email = validated_data.get("email", instance.email)
         instance.avatar = validated_data.get("avatar", instance.avatar)
@@ -70,6 +92,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
             make_center_crop.delay(str(instance.avatar), PathImageTypeEnum.AVATAR)
 
         return instance
+
+
+class UserDetailTimezonesSerializer(serializers.Serializer):
+    user = UserDetailSerializer(read_only=True)
+    availible_timezones = serializers.ListField()
 
 
 class FollowerCreateSerializer(serializers.ModelSerializer):

@@ -6,6 +6,7 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
+import pytz
 
 from users.models import Follow
 from users.permissions import UserPermission
@@ -19,6 +20,7 @@ from users.serializers import (
     UserCustomSerializer,
     UserDefaultSerializer,
     UserDetailSerializer,
+    UserDetailTimezonesSerializer
 )
 from users.services import (
     annotate_follows_queryset,
@@ -43,12 +45,12 @@ User = get_user_model()
         status.HTTP_201_CREATED: UserDefaultSerializer,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer
     }, description="Endpoint to create new user."),
-    update=extend_schema(request=UserDetailSerializer, responses={
+    update_me=extend_schema(request=UserDetailSerializer, responses={
         status.HTTP_204_NO_CONTENT: None,
         status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
     }, description="Endpoint to update your user."),
-    my=extend_schema(request=None, responses={
-        status.HTTP_200_OK: UserDetailSerializer
+    me=extend_schema(request=None, responses={
+        status.HTTP_200_OK: UserDetailTimezonesSerializer
     }, description="Endpoint to get info about you."),
     login=extend_schema(request=AuthTokenSerializer, responses={
         status.HTTP_200_OK: TokenSerializer,
@@ -87,9 +89,12 @@ class UserViewSet(
 
         return self.queryset
 
-    @action(methods=["get"], detail=False, url_name="my", permission_classes=(permissions.IsAuthenticated,))
-    def my(self, request: Request) -> Response:
-        return Response(self.serializer_class(instance=request.user).data, status=status.HTTP_200_OK)
+    @action(methods=["get"], detail=False, url_name="me", permission_classes=(permissions.IsAuthenticated,))
+    def me(self, request: Request) -> Response:
+        return Response({
+            "user": self.serializer_class(instance=request.user).data, 
+            "availible_timezones": pytz.common_timezones
+        }, status=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False, url_name="login")
     def login(self, request: Request) -> Response:

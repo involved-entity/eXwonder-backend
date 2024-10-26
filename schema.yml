@@ -113,9 +113,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/account/account/my/:
+  /api/v1/account/account/me/:
     get:
-      operationId: account_account_my_retrieve
+      operationId: account_account_me_retrieve
       description: Endpoint to get info about you.
       tags:
       - account
@@ -127,7 +127,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetail'
+                $ref: '#/components/schemas/UserDetailTimezones'
           description: ''
   /api/v1/account/account/two_factor_authentication/:
     post:
@@ -166,6 +166,7 @@ paths:
   /api/v1/account/account/update-me/:
     put:
       operationId: account_account_update_me_update
+      description: Endpoint to update your user.
       tags:
       - account
       requestBody:
@@ -184,14 +185,17 @@ paths:
       - cookieAuth: []
       - tokenAuth: []
       responses:
-        '200':
+        '204':
+          description: No response body
+        '400':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetail'
+                $ref: '#/components/schemas/DetailedCode'
           description: ''
     patch:
       operationId: account_account_update_me_partial_update
+      description: Endpoint to update your user.
       tags:
       - account
       requestBody:
@@ -209,11 +213,13 @@ paths:
       - cookieAuth: []
       - tokenAuth: []
       responses:
-        '200':
+        '204':
+          description: No response body
+        '400':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetail'
+                $ref: '#/components/schemas/DetailedCode'
           description: ''
   /api/v1/account/followers/:
     get:
@@ -456,6 +462,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserCustom'
+          description: ''
+  /api/v1/posts/comment-likes/:
+    post:
+      operationId: posts_comment_likes_create
+      description: Endpoint to like some comment.
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentID'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentID'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentID'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentLike'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
+          description: ''
+  /api/v1/posts/comment-likes/{comment_id}/:
+    delete:
+      operationId: posts_comment_likes_destroy
+      description: Endpoint to delete like from comment.
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this comment like.
+        required: true
+      tags:
+      - posts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCode'
           description: ''
   /api/v1/posts/comments/:
     get:
@@ -1039,12 +1110,44 @@ components:
         time_added:
           type: string
           readOnly: true
+        likes_count:
+          type: integer
+          readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
       required:
       - author
       - comment
       - id
+      - is_liked
+      - likes_count
       - post
       - time_added
+    CommentID:
+      type: object
+      properties:
+        comment_id:
+          type: integer
+          minimum: 1
+      required:
+      - comment_id
+    CommentLike:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        comment:
+          type: integer
+          readOnly: true
+      required:
+      - author
+      - comment
+      - id
     DetailedCode:
       type: object
       properties:
@@ -1564,6 +1667,19 @@ components:
       - id
       - password
       - username
+    UserDetailTimezones:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserDetail'
+          readOnly: true
+        timezones:
+          type: array
+          items: {}
+      required:
+      - timezones
+      - user
   securitySchemes:
     cookieAuth:
       type: apiKey

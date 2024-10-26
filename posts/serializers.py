@@ -99,8 +99,8 @@ class CommentSerializer(serializers.ModelSerializer):
     author = UserDefaultSerializer(read_only=True)
     time_added = serializers.SerializerMethodField()
 
-    likes_count = serializers.IntegerField()
-    is_liked = serializers.BooleanField()
+    likes_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Comment
