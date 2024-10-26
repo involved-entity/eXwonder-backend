@@ -44,12 +44,13 @@ class PostSerializer(serializers.ModelSerializer):
     comments_count = serializers.IntegerField(read_only=True)
     is_liked = serializers.BooleanField(read_only=True)
     is_commented = serializers.BooleanField(read_only=True)
+    is_saved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Post
         fields = ("id", "author", "signature", "time_added",
                   "images", "likes_count", "comments_count",
-                  "is_liked", "is_commented")
+                  "is_liked", "is_commented", "is_saved")
 
     def validate(self, attrs):
         if "image0" in list(self.context["request"].data.keys()):
@@ -132,10 +133,11 @@ class SavedSerializer(serializers.ModelSerializer):
     comments_count = serializers.IntegerField(read_only=True)
     is_liked = serializers.BooleanField(read_only=True)
     is_commented = serializers.BooleanField(read_only=True)
+    is_saved = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Saved
-        fields = "id", "owner", "post", "time_added", "likes_count", "comments_count", "is_liked", "is_commented"
+        fields = "id", "owner", "post", "time_added", "likes_count", "comments_count", "is_liked", "is_commented", "is_saved"
         read_only_fields = "post", "time_added"
 
     def get_time_added(self, saved):
