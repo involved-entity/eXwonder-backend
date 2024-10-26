@@ -49,7 +49,7 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    avatar = UserAvatarField()
+    avatar = UserAvatarField(required=False)
 
     class Meta:
         model = User
