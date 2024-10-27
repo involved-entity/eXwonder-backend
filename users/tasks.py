@@ -59,8 +59,8 @@ def send_reset_password_mail(
     context['user'] = User.objects.get(pk=context['user'])
 
     PasswordResetForm().send_mail(
-        subject_template_name,
         email_template_name,
+        subject_template_name,
         context,
         from_email,
         to_email,

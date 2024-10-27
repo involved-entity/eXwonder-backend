@@ -60,6 +60,7 @@ class ExwonderUser(AbstractBaseUser):
     date_joined = models.DateTimeField(verbose_name=_('Время регистрации'), auto_now_add=True)
     penultimate_login = models.DateTimeField(verbose_name=_("Предпоследний вход"), blank=True, null=True)
     is_2fa_enabled = models.BooleanField(verbose_name=_('Включена ли 2FA'), default=False)
+    is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = "username"
     objects = ExwonderUserManager()
