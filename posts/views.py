@@ -64,11 +64,15 @@ class PostViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        queryset = Post.objects.filter()   # noqa
-        queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
-        if not has_filtered:
-            queryset = filter_posts_queryset_by_author(self.request, queryset,
-                                                       self.request.query_params.get("user", None))
+        queryset = Post.objects.filter()
+
+        if self.action != 'retrieve':
+            queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
+            if not has_filtered:
+                queryset = filter_posts_queryset_by_author(self.request, queryset,
+                                                           self.request.query_params.get("user", None))
+        else:
+            queryset = get_full_annotated_posts_queryset(self.request, queryset)
         return queryset
 
     def perform_create(self, serializer):
