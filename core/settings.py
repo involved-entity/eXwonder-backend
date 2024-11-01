@@ -11,7 +11,7 @@ Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 HOST = env("HOST", default="http://localhost:8000/")
 SECRET_KEY = env("SECRET_KEY")
-DEBUG = env("DEBUG")
+DEBUG = int(env("DEBUG"))
 ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(", ")
 
 INSTALLED_APPS = [
@@ -43,10 +43,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = (
-    'http://localhost:5173',
-    'http://localhost:8080'
-)
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = (
     'GET',
@@ -124,7 +121,7 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": env("DJANGO_CACHE_URL"),
-        "TIMEOUT": 60*60*24,
+        "TIMEOUT": 60*60*24
     }
 }
 
