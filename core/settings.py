@@ -173,7 +173,7 @@ POSTS_IMAGES_DIR = "posts_images"
 TEST_IMAGES_DIR = "test_images"
 
 TOKEN_EXP_TIME = timedelta(days=30)
-LAST_LOGIN_UPDATE_TIME = timedelta(hours=3)
+LAST_LOGIN_UPDATE_TIME = timedelta(hours=1)
 TWO_FACTOR_AUTHENTICATION_CODE_LENGTH = 5
 TWO_FACTOR_AUTHENTICATION_CODE_LIVETIME = 60 * 10   # seconds
 
