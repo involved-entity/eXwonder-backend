@@ -6,12 +6,16 @@
 
 <!-- TOC --><a name="exwonder-backend"></a>
 # eXwonder-backend
+<<<<<<< HEAD
 Backend онлайн хостинга картинок __eXwonder__, являющегося по функционалу урезанной версией Instagram. 
 Код написан на Python фреймворке [Django 5](https://www.djangoproject.com/), использует [PostgreSQL](https://www.postgresql.org/) как основную БД, 
 [Redis](https://github.com/redis/redis) для кэширования и брокинга сообщений, [Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html) 
 для обработки очередей задач. Также применяется библиотека __[dj-rest-auth](https://github.com/iMerica/dj-rest-auth)__ для операций с аккаунтом 
 через REST API, к которому также имеется Swagger-схема, сгенерированная при помощи 
 __[drf-spectacular](https://github.com/tfranzel/drf-spectacular/)__. Используемый линтер и форматер кода - __[ruff](https://github.com/astral-sh/ruff)__. 
+=======
+Backend онлайн хостинга картинок с элементами соц-сети __eXwonder__, являющегося по функционалу урезанной версией Instagram. Код написан на Python фреймворке [Django 5](https://www.djangoproject.com/), использует [PostgreSQL](https://www.postgresql.org/) как основную БД, [Redis](https://github.com/redis/redis) для кэширования и брокинга сообщений, [Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html) для обработки очередей задач.
+>>>>>>> 6cf7a8f7c01d53135c21dfadab717d7b9689979a
 
 <!-- TOC --><a name="installation"></a>
 ## Установка
