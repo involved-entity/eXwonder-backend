@@ -29,7 +29,7 @@ class TestUsersCreation(GenericTest):
 
 
 class TestUsersMy(AssertResponseMixin, GenericTest):
-    endpoint_detail = "users:account-my"
+    endpoint_detail = "users:account-me"
 
     def test_users_my(self, api_client):
         super().make_test(api_client)
@@ -39,7 +39,7 @@ class TestUsersMy(AssertResponseMixin, GenericTest):
         return self.send_endpoint_detail_request(client, status.HTTP_200_OK), instance
 
     def assert_case_test(self, response: Response, *args) -> None:
-        self.assert_response(response, needed_keys=('id', 'username', 'timezone', 'is_2fa_enabled'))
+        self.assert_response(response, needed_keys=('user', 'availible_timezones'))
 
 
 class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
@@ -86,7 +86,7 @@ class TestUsersFull(AssertResponseMixin, GenericTest):
 
 class TestUsersUpdate(GenericTest):
     endpoint_list = "users:account-list"
-    endpoint_detail = "users:account-my"
+    endpoint_detail = "users:account-me"
     endpoint_update = "users:account-update"
 
     def test_users_update(self, api_client):
@@ -107,11 +107,11 @@ class TestUsersUpdate(GenericTest):
         args[0].force_authenticate(args[1])
         response = args[0].get(reverse_lazy(self.endpoint_detail))
         content = json.loads(response.content)
-        assert content["id"] == args[1].pk
-        assert content["username"] == args[1].username
-        assert content["email"] == args[1].email
-        assert content["timezone"] == args[1].timezone
-        assert content["is_2fa_enabled"] == args[1].is_2fa_enabled
+        assert content["user"]["id"] == args[1].pk
+        assert content["user"]["username"] == args[1].username
+        assert content["user"]["email"] == args[1].email
+        assert content["user"]["timezone"] == args[1].timezone
+        assert content["user"]["is_2fa_enabled"] == args[1].is_2fa_enabled
         return content
 
 
