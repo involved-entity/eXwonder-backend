@@ -1,0 +1,80 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main 
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:latest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=10s
+          --health-timeout=5s --health-retries=5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: exwonder 
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          echo "DATABASE_USER='postgres'" >> .env
+          echo "DATABASE_PASSWORD='postgres'" >> .env
+          echo "DJANGO_CACHE_URL='redis://localhost:6379/1'" >> .env
+          echo "CELERY_BROKER_URL='redis://localhost:6379/0'" >> .env
+          echo "CELERY_RESULT_BACKEND='redis://localhost:6379/2'" >> .env
+
+      - name: Run tests
+        run: |
+          pytest tests/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: testing
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_AUTH_KEY }}
+
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS }} << 'EOF'
+            cd /var/www/exwonder/eXwonder-backend &&
+            git pull origin main &&
+            source venv/bin/activate &&
+            pip install -r requirements.txt &&
+            python manage.py migrate &&
+            python manage.py collectstatic --noinput &&
+            sudo supervisorctl restart gunicorn &&
+            sudo systemctl restart nginx
+          EOF
+
