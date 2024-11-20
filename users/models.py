@@ -15,17 +15,26 @@ def get_uploaded_avatar_path(instance: Optional['ExwonderUser'] = None, filename
 class ExwonderUserManager(BaseUserManager):
     def create_user(self, username: str, email: str, avatar: str, timezone: str, password: Optional[str] = None) \
             -> 'ExwonderUser':
-        if not email:
-            raise ValueError("Users must have an email address")
-
         user: 'ExwonderUser' = self.model(
             username=username,
-            email=self.normalize_email(email),
+            email=self.normalize_email(email) or None,
             avatar=avatar,
             timezone=timezone
         )
 
         user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username: str, email: Optional[str] = None, avatar: Optional[str] = None, timezone: Optional[str] = None, password: Optional[str] = None):
+        user = self.create_user(
+            username=username,
+            email=email or '',
+            avatar=avatar or settings.DEFAULT_USER_AVATAR_PATH,
+            timezone=timezone or settings.DEFAULT_USER_TIMEZONE,
+            password=password
+        )
+        user.is_admin = True
         user.save(using=self._db)
         return user
 

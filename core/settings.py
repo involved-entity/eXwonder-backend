@@ -1,3 +1,7 @@
+""" 
+wonderer
+"""
+
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -10,9 +14,9 @@ env = Env()
 Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 HOST = env("HOST", default="http://localhost:8000/")
-SECRET_KEY = env("SECRET_KEY")
-DEBUG = int(env("DEBUG"))
-ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(", ")
+SECRET_KEY = env("SECRET_KEY", default='secret_key')
+DEBUG = int(env("DEBUG", default=1))
+ALLOWED_HOSTS = env("ALLOWED_HOSTS", default='localhost, 127.0.0.1').split(", ")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,14 +47,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:80"
+]
 
 CORS_ALLOW_METHODS = (
     'GET',
     'POST',
     'DELETE',
     'PUT',
-    'PATCH'
+    'PATCH',
+    'OPTIONS'
 )
 
 ROOT_URLCONF = 'core.urls'
@@ -79,11 +86,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DATABASE_NAME"),
+        "NAME": env("DATABASE_NAME", default='exwonder'),
         "USER": env("DATABASE_USER"),
         "PASSWORD": env("DATABASE_PASSWORD"),
-        "HOST": env("DATABASE_HOST"),
-        "PORT": env("DATABASE_PORT"),
+        "HOST": env("DATABASE_HOST", default='localhost'),
+        "PORT": env("DATABASE_PORT", default='5432'),
     }
 }
 
@@ -120,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("DJANGO_CACHE_URL"),
+        "LOCATION": env("DJANGO_CACHE_URL", default='redis://localhost:6379/1'),
         "TIMEOUT": 60*60*24
     }
 }
@@ -179,12 +186,12 @@ CROPPED_IMAGE_POSTFIX = '_crop'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = "noreply@exwonder"
 
-CELERY_BROKER_URL = env("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default='redis://localhost:6379/2')
 
 LANGUAGE_CODE = 'en-us'
 

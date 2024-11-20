@@ -13,4 +13,6 @@ pytest-factoryboy==2.7.0
 pytest-django==4.9.0
 pytz==2024.2
 django-cors-headers==4.5.0
+gunicorn
+flower
 
