@@ -9,3 +9,5 @@ mediafiles/
 journal.py
 static/
 .dockerignore
+.python-version
+uv.lock
