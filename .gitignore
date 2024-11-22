@@ -1,4 +1,4 @@
-venv/
+.venv/
 .env
 .env.docker
 docker-compose.yml
@@ -7,3 +7,5 @@ Dockerfile
 **/__pycache__/
 mediafiles/
 journal.py
+static/
+.dockerignore

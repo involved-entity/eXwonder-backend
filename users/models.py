@@ -7,6 +7,8 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from django.contrib.auth.models import PermissionsMixin
+
 
 def get_uploaded_avatar_path(instance: Optional['ExwonderUser'] = None, filename: Optional[str] = None) -> str:
     return f"{settings.CUSTOM_USER_AVATARS_DIR}/{filename}"
@@ -26,7 +28,8 @@ class ExwonderUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username: str, email: Optional[str] = None, avatar: Optional[str] = None, timezone: Optional[str] = None, password: Optional[str] = None):
+    def create_superuser(self, username: str, email: Optional[str] = None, avatar: Optional[str] = None,
+                         timezone: Optional[str] = None, password: Optional[str] = None) -> 'ExwonderUser':
         user = self.create_user(
             username=username,
             email=email or '',
@@ -34,12 +37,13 @@ class ExwonderUserManager(BaseUserManager):
             timezone=timezone or settings.DEFAULT_USER_TIMEZONE,
             password=password
         )
-        user.is_admin = True
+        user.is_staff = True
+        user.is_superuser = True
         user.save(using=self._db)
         return user
 
 
-class ExwonderUser(AbstractBaseUser):
+class ExwonderUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(
         verbose_name=_("Имя пользователя"),
         max_length=16,
@@ -70,6 +74,11 @@ class ExwonderUser(AbstractBaseUser):
     penultimate_login = models.DateTimeField(verbose_name=_("Предпоследний вход"), blank=True, null=True)
     is_2fa_enabled = models.BooleanField(verbose_name=_('Включена ли 2FA'), default=False)
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into this admin site."),
+    )
 
     USERNAME_FIELD = "username"
     objects = ExwonderUserManager()
