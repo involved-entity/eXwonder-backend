@@ -45,51 +45,52 @@ class ExwonderUserManager(BaseUserManager):
 
 class ExwonderUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(
-        verbose_name=_("Имя пользователя"),
+        verbose_name=_("Username"),
         max_length=16,
         unique=True,
-        help_text=_("Не более 16 символов, не менее 5. Буквы, цифры, @/./+/-/_."),
         validators=[UnicodeUsernameValidator(), MinLengthValidator(5)],
         error_messages={
-            "unique": _("Пользователь с таким именем уже существует."),
+            "unique": _("Username isn't unique."),
         }
     )
     email = models.EmailField(
-        verbose_name=_('Почта'),
+        verbose_name=_('Email'),
         unique=True,
-        help_text=_("Электронная почта для аккаунта."),
         null=True
     )
     avatar = models.ImageField(
-        verbose_name=_("Аватарка"),
+        verbose_name=_("Avatar"),
         upload_to=get_uploaded_avatar_path,
         default=settings.DEFAULT_USER_AVATAR_PATH
     )
     timezone = models.CharField(
-        verbose_name=_("Временная зона"),
+        verbose_name=_("Time zone"),
         max_length=64,
         default=settings.DEFAULT_USER_TIMEZONE
     )
-    date_joined = models.DateTimeField(verbose_name=_('Время регистрации'), auto_now_add=True)
-    penultimate_login = models.DateTimeField(verbose_name=_("Предпоследний вход"), blank=True, null=True)
-    is_2fa_enabled = models.BooleanField(verbose_name=_('Включена ли 2FA'), default=False)
+    date_joined = models.DateTimeField(verbose_name=_('Date joined'), auto_now_add=True)
+    penultimate_login = models.DateTimeField(verbose_name=_("Penultimate login"), blank=True, null=True)
+    is_2fa_enabled = models.BooleanField(verbose_name=_('Is two factor authentication enabled'), default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
-        _("staff status"),
+        _("Staff status"),
         default=False,
-        help_text=_("Designates whether the user can log into this admin site."),
     )
 
     USERNAME_FIELD = "username"
     objects = ExwonderUserManager()
 
     class Meta:
-        verbose_name = _("Пользователь")
-        verbose_name_plural = _("Пользователи")
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
 
         ordering = "pk",
 
         db_table = "exwonder_users"
+
+        indexes = (
+            models.Index(fields=('username',), name='Username index'),
+        )
 
     def __str__(self):
         return f"{self.username}"
