@@ -70,7 +70,7 @@ class ExwonderUser(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(verbose_name=_('Date joined'), auto_now_add=True)
     penultimate_login = models.DateTimeField(verbose_name=_("Penultimate login"), blank=True, null=True)
-    is_2fa_enabled = models.BooleanField(verbose_name=_('Is two factor authentication enabled'), default=False)
+    is_2fa_enabled = models.BooleanField(verbose_name=_('Is 2FA enabled'), default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
         _("Staff status"),
@@ -102,6 +102,8 @@ class Follow(models.Model):
 
     class Meta:
         ordering = "-pk",
+        verbose_name = _('Follow')
+        verbose_name_plural = _('Follows')
 
     def __str__(self):
         return f"{self.follower.pk} following for {self.following.pk}"   # noqa

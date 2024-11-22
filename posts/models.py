@@ -5,6 +5,8 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 
+from django.utils.translation import gettext_lazy as _
+
 User = get_user_model()
 
 
@@ -15,6 +17,10 @@ def post_images_upload(instance: 'PostImage', filename: str) -> str:
 class PostImage(models.Model):
     image = models.ImageField(upload_to=post_images_upload)
     post = models.ForeignKey("Post", related_name="images", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = _('Post image')
+        verbose_name_plural = _('Posts images')
 
     def __str__(self):
         return f"Image for {self.post.pk}."   # noqa
@@ -32,6 +38,10 @@ class Post(models.Model):
 
     class Meta:
         ordering = "-id",
+        verbose_name = _('Post')
+        verbose_name_plural = _('Posts')
+
+        db_table = 'posts'
 
     def __str__(self):
         return f"{self.pk} post."
@@ -40,6 +50,10 @@ class Post(models.Model):
 class PostLike(models.Model):
     author = models.ForeignKey(User, related_name="likes", on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name="likes", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = _('Post like')
+        verbose_name_plural = _('Posts likes')
 
     def __str__(self):
         return f"{self.author.pk} like for {self.post.pk} post."   # noqa
@@ -53,6 +67,8 @@ class Comment(models.Model):
 
     class Meta:
         ordering = "-time_added",
+        verbose_name = _('Comment')
+        verbose_name_plural = _('Comments')
 
     def __str__(self):
         return f"{self.author.pk} comment for {self.post.pk}."   # noqa
@@ -62,8 +78,12 @@ class CommentLike(models.Model):
     author = models.ForeignKey(User, related_name="comment_likes", on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, related_name="likes", on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = _('Comment like')
+        verbose_name_plural = _('Comments likes')
+
     def __str__(self):
-        return f"{self.author.pk} like for {self.post.pk} comment."   # noqa
+        return f"{self.author.pk} like for {self.comment.pk} comment."   # noqa
 
 
 class Saved(models.Model):
@@ -73,6 +93,8 @@ class Saved(models.Model):
 
     class Meta:
         ordering = "-time_added", "-id"
+        verbose_name = _('Saved post')
+        verbose_name_plural = _('Saved posts')
 
     def __str__(self):
         return f"Saved post {self.post.pk} by {self.owner.pk}"   # noqa
