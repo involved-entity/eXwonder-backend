@@ -39,7 +39,7 @@ class TestCommentsDelete(GenericTest):
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert Comment.objects.count() == 0   # noqa
+        assert Comment.objects.count() == 0  # noqa
 
 
 class TestCommentsOfPost(AssertPaginatedResponseMixin, GenericTest):

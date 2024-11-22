@@ -10,6 +10,6 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 class IsOwnerOrCreateOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        if view.action in ('list', 'destroy'):
+        if view.action in ("list", "destroy"):
             return request.user == obj.owner
         return True

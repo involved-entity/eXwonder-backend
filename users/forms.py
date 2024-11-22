@@ -23,13 +23,8 @@ class PasswordResetForm(PasswordResetFormCore):
         to_email: str,
         html_email_template_name: typing.Optional[str] = None,
     ) -> None:
-        context['user'] = context['user'].id
+        context["user"] = context["user"].id
 
         send_reset_password_mail.delay(
-            subject_template_name,
-            email_template_name,
-            context,
-            from_email,
-            to_email,
-            html_email_template_name
+            subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name
         )

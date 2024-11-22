@@ -13,8 +13,17 @@ from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
 
-POST_NEEDED_FIELDS = ("id", "author", "signature", "time_added", "images", "likes_count", "comments_count",
-                      "is_liked", "is_commented")
+POST_NEEDED_FIELDS = (
+    "id",
+    "author",
+    "signature",
+    "time_added",
+    "images",
+    "likes_count",
+    "comments_count",
+    "is_liked",
+    "is_commented",
+)
 
 
 class TestPostsCreation(GenericTest):
@@ -60,9 +69,9 @@ class TestPostsRetrieve(AssertResponseMixin, GenericTest):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> typing.Tuple[Response, Post, User]:
-        post = self.register_post(client, instance)   # noqa
+        post = self.register_post(client, instance)  # noqa
         client.force_authenticate(instance)
-        return client.get(reverse_lazy(self.endpoint_detail, kwargs={"id": post.id})), post, instance   # noqa
+        return client.get(reverse_lazy(self.endpoint_detail, kwargs={"id": post.id})), post, instance  # noqa
 
     def assert_case_test(self, response: Response, *args) -> None:
         content = self.assert_response(response, needed_keys=POST_NEEDED_FIELDS)
@@ -80,10 +89,10 @@ class TestPostsDelete(GenericTest):
         super().make_test(api_client)
 
     def case_test(self, client: APIClient, instance: User) -> Response:
-        post_id = self.register_post(client, instance).id   # noqa
+        post_id = self.register_post(client, instance).id  # noqa
         client.force_authenticate(instance)
-        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))   # noqa
+        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))  # noqa
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert Post.objects.count() == 0   # noqa
+        assert Post.objects.count() == 0  # noqa

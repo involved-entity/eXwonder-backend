@@ -7,19 +7,17 @@ from django.conf import settings
 from django.utils.timesince import timesince
 from rest_framework import serializers
 
-from posts.models import Comment, Post, PostImage, PostLike, Saved, CommentLike
+from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
 
 
-def datetime_to_timezone(dt: datetime, timezone: str, attribute_name: typing.Optional[str] = 'time_added') \
-        -> typing.Dict:
+def datetime_to_timezone(
+    dt: datetime, timezone: str, attribute_name: typing.Optional[str] = "time_added"
+) -> typing.Dict:
     dt = pytz.timezone(timezone).localize(datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
-    return {
-        attribute_name: timesince(dt + dt.utcoffset()),
-        "timezone": timezone
-    }
+    return {attribute_name: timesince(dt + dt.utcoffset()), "timezone": timezone}
 
 
 class PostImageSerializer(serializers.ModelSerializer):
@@ -28,7 +26,7 @@ class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostImage
         fields = "id", "image", "image_crop"
-        read_only_fields = "image",
+        read_only_fields = ("image",)
 
     def get_image_crop(self, instance):
         media_url = urllib.parse.urljoin(settings.HOST, settings.MEDIA_URL)
@@ -48,9 +46,18 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ("id", "author", "signature", "time_added",
-                  "images", "likes_count", "comments_count",
-                  "is_liked", "is_commented", "is_saved")
+        fields = (
+            "id",
+            "author",
+            "signature",
+            "time_added",
+            "images",
+            "likes_count",
+            "comments_count",
+            "is_liked",
+            "is_commented",
+            "is_saved",
+        )
 
     def validate(self, attrs):
         if "image0" in list(self.context["request"].data.keys()):
@@ -61,21 +68,18 @@ class PostSerializer(serializers.ModelSerializer):
         header_image = None
         post_images = []
 
-        post = Post(
-            author=validated_data["author"],
-            signature=validated_data.get("signature", "")
-        )
+        post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
         post.save()
 
         for key, value in self.context["request"].data.items():
             if key.startswith("image"):
                 instance = PostImage(image=value, post=post)
-                if key == 'image0':
+                if key == "image0":
                     post_images.insert(0, instance)
                 else:
                     post_images.append(instance)
 
-        post_images = PostImage.objects.bulk_create(post_images)   # noqa
+        post_images = PostImage.objects.bulk_create(post_images)  # noqa
         make_center_crop.delay(str(post_images[0].image), PathImageTypeEnum.POST)
         return post
 
@@ -90,7 +94,7 @@ class PostLikeSerializer(serializers.ModelSerializer):
         read_only_fields = "author", "post"
 
     def create(self, validated_data):
-        like = PostLike.objects.filter(author=validated_data["author"], post=validated_data["post"])   # noqa
+        like = PostLike.objects.filter(author=validated_data["author"], post=validated_data["post"])  # noqa
         if like.exists():
             return like.first()
         return super().create(validated_data)
@@ -119,7 +123,7 @@ class CommentLikeSerializer(serializers.ModelSerializer):
         read_only_fields = "author", "comment"
 
     def create(self, validated_data):
-        like = CommentLike.objects.filter(author=validated_data["author"], comment=validated_data["comment"])   # noqa
+        like = CommentLike.objects.filter(author=validated_data["author"], comment=validated_data["comment"])  # noqa
         if like.exists():
             return like.first()
         return super().create(validated_data)
@@ -137,7 +141,17 @@ class SavedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Saved
-        fields = "id", "owner", "post", "time_added", "likes_count", "comments_count", "is_liked", "is_commented", "is_saved"
+        fields = (
+            "id",
+            "owner",
+            "post",
+            "time_added",
+            "likes_count",
+            "comments_count",
+            "is_liked",
+            "is_commented",
+            "is_saved",
+        )
         read_only_fields = "post", "time_added"
 
     def get_time_added(self, saved):

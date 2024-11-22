@@ -31,8 +31,7 @@ class FollowTestService(RegisterObjectsMixin):
         self.mode = FollowTestMode.FOLLOWINGS if mode == FollowTestMode.FOLLOWINGS_EACH_USER else mode
         self.__mode_source = mode
 
-    def __get_registered_user_and_followings(self, client: APIClient) \
-            -> typing.Tuple[User, BatchStubUsers]:
+    def __get_registered_user_and_followings(self, client: APIClient) -> typing.Tuple[User, BatchStubUsers]:
         user = self.register_users(client, 1)[0]
         followings = self.register_users(client, self.list_tests_count)
         return user, followings
@@ -42,8 +41,9 @@ class FollowTestService(RegisterObjectsMixin):
         client.force_authenticate(auth_user)
         return client
 
-    def __create_and_assert_valid_follow(self, client: APIClient, following: User, index: int, url: str, user: User) \
-            -> None:
+    def __create_and_assert_valid_follow(
+        self, client: APIClient, following: User, index: int, url: str, user: User
+    ) -> None:
         following = user if self.mode == FollowTestMode.FOLLOWERS else following
         response = client.post(url, data={"following": following.pk})
         assert response.status_code == status.HTTP_201_CREATED
@@ -70,8 +70,7 @@ class FollowTestService(RegisterObjectsMixin):
         assert "count" in list(content.keys()) and content["count"] == self.list_tests_count
         assert len(content["results"]) == self.list_tests_count
 
-    def make_follow_test(self, client: APIClient) \
-            -> None:
+    def make_follow_test(self, client: APIClient) -> None:
         user, followings = self.__get_registered_user_and_followings(client)
         url = reverse_lazy(self.endpoint_follow)
 

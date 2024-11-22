@@ -15,7 +15,7 @@ pytestmark = [pytest.mark.django_db]
 
 
 class TestSavedCreation(GenericTest):
-    endpoint_list = 'posts:saved-list'
+    endpoint_list = "posts:saved-list"
 
     def test_saved_creation(self, api_client):
         super().make_test(api_client)
@@ -25,7 +25,7 @@ class TestSavedCreation(GenericTest):
 
 
 class TestSavedPosts(AssertContentKeysMixin, GenericTest):
-    endpoint_list = 'posts:saved-list'
+    endpoint_list = "posts:saved-list"
 
     def test_saved_posts(self, api_client):
         super().make_test(api_client)
@@ -49,7 +49,7 @@ class TestSavedPosts(AssertContentKeysMixin, GenericTest):
 
 
 class TestSavedDestroy(AssertResponseMixin, GenericTest):
-    endpoint_detail = 'posts:saved-detail'
+    endpoint_detail = "posts:saved-detail"
 
     def test_saved_destroy(self, api_client):
         super().make_test(api_client)
@@ -57,8 +57,8 @@ class TestSavedDestroy(AssertResponseMixin, GenericTest):
     def case_test(self, client: APIClient, instance: User) -> Response:
         post_id = self.register_saved_post(client, instance)
         client.force_authenticate(instance)
-        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={'id': post_id}))
+        return client.delete(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))
 
     def assert_case_test(self, response: Response, *args) -> None:
         self.assert_response(response, status.HTTP_204_NO_CONTENT)
-        assert Saved.objects.count() == 0   # noqa
+        assert Saved.objects.count() == 0  # noqa

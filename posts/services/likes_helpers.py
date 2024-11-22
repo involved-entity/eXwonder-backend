@@ -1,16 +1,13 @@
-from posts.permissions import IsOwnerOrReadOnly
+from django.shortcuts import get_object_or_404
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from rest_framework import permissions, mixins, viewsets, status
+
+from posts.permissions import IsOwnerOrReadOnly
 from posts.services import CreateModelCustomMixin
 
 
-class BaseLikeViewSet(
-    CreateModelCustomMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class BaseLikeViewSet(CreateModelCustomMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     entity_model = None
 

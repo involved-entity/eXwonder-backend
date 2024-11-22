@@ -17,5 +17,5 @@ urlpatterns = [
     path("followings/user/<int:pk>/", FollowingsUserAPIView.as_view(), name="followings-user"),
     path("password-change/", PasswordChangeView.as_view(), name="password-change"),
     path("password-reset/", PasswordResetView.as_view(), name="password-reset"),
-    path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm")
+    path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
 ]

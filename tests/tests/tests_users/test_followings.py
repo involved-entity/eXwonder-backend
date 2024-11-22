@@ -47,12 +47,7 @@ class TestFollowingsOfUser(GenericTest):
 
     list_tests_count = 5
 
-    service = FollowTestService(
-        endpoint_list,
-        "users:followings-user",
-        list_tests_count,
-        FollowTestMode.FOLLOWINGS
-    )
+    service = FollowTestService(endpoint_list, "users:followings-user", list_tests_count, FollowTestMode.FOLLOWINGS)
 
     def test_followings_of_user(self, api_client):
         super().make_test(api_client)
@@ -68,12 +63,7 @@ class TestFollowingsOfEachUser(GenericTest):
 
     list_tests_count = 5
 
-    service = FollowTestService(
-        endpoint_list,
-        endpoint_user,
-        list_tests_count,
-        FollowTestMode.FOLLOWINGS_EACH_USER
-    )
+    service = FollowTestService(endpoint_list, endpoint_user, list_tests_count, FollowTestMode.FOLLOWINGS_EACH_USER)
 
     def test_followings_of_each_user(self, api_client):
         super().make_test(api_client)

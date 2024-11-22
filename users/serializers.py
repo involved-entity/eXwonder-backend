@@ -1,11 +1,11 @@
 import typing
 import urllib.parse
 
+import pytz
 from dj_rest_auth.serializers import PasswordResetSerializer as PasswordResetSerializerCore
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-import pytz
 
 from users.forms import PasswordResetForm
 from users.models import Follow
@@ -39,12 +39,12 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = 'id', 'username', 'avatar', 'posts_count', 'is_followed', 'followers_count', 'followings_count'
+        fields = "id", "username", "avatar", "posts_count", "is_followed", "followers_count", "followings_count"
         extra_kwargs = {
-            'posts_count': {"allow_null": True},
-            'is_followed': {"allow_null": True},
-            'followers_count': {"allow_null": True},
-            'followings_count': {"allow_null": True}
+            "posts_count": {"allow_null": True},
+            "is_followed": {"allow_null": True},
+            "followers_count": {"allow_null": True},
+            "followings_count": {"allow_null": True},
         }
 
 
@@ -65,7 +65,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         if value:
             if value in pytz.common_timezones_set:
                 return value
-            raise serializers.ValidationError('Invalid timezone')
+            raise serializers.ValidationError("Invalid timezone")
         return value
 
     def create(self, validated_data):
@@ -73,7 +73,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             username=validated_data["username"],
             email=validated_data.get("email", None),
             avatar=validated_data.get("avatar", settings.DEFAULT_USER_AVATAR_PATH),
-            timezone=validated_data.get("timezone", settings.DEFAULT_USER_TIMEZONE)
+            timezone=validated_data.get("timezone", settings.DEFAULT_USER_TIMEZONE),
         )
         user.set_password(validated_data["password"])
         user.save()
@@ -87,8 +87,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
         instance.avatar = validated_data.get("avatar", instance.avatar)
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
-        
-        if not validated_data.get('email') or len(validated_data.get("email")) == 0:
+
+        if not validated_data.get("email") or len(validated_data.get("email")) == 0:
             instance.email = email_before_update
 
         instance.save()
@@ -125,10 +125,10 @@ class FollowingCreateSerializer(serializers.ModelSerializer):
         follower = validated_data["follower"]
         following = validated_data["following"]
 
-        filter = Follow.objects.filter(follower=follower, following=following)   # noqa
+        filter = Follow.objects.filter(follower=follower, following=following)  # noqa
 
         if not filter.exists():
-            return Follow.objects.create(follower=follower, following=following)   # noqa
+            return Follow.objects.create(follower=follower, following=following)  # noqa
         return filter.first()
 
 
@@ -168,8 +168,8 @@ class DetailedCodeSerializer(serializers.Serializer):
 class PasswordResetSerializer(PasswordResetSerializerCore):
     def get_email_options(self) -> typing.Dict:
         return {
-            "subject_template_name": 'users/mails/reset_password_body.html',
-            "email_template_name": 'users/mails/reset_password_subject.html'
+            "subject_template_name": "users/mails/reset_password_body.html",
+            "email_template_name": "users/mails/reset_password_subject.html",
         }
 
     @property
@@ -180,6 +180,6 @@ class PasswordResetSerializer(PasswordResetSerializerCore):
 class TwoFactorAuthenticationCodeSerializer(serializers.Serializer):
     auth_code = serializers.CharField(
         max_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
-        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH
+        min_length=settings.TWO_FACTOR_AUTHENTICATION_CODE_LENGTH,
     )
     session_key = serializers.CharField()

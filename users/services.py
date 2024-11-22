@@ -44,37 +44,39 @@ def get_user_login_token(user: User) -> str:
 
 
 def remove_user_token(user: User) -> None:
-    Token.objects.filter(user=user).delete()   # noqa
+    Token.objects.filter(user=user).delete()  # noqa
 
 
 def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optional[typing.List] = None) -> QuerySet:
     if not fields:
-        fields = ['posts_count', 'is_followed', 'followers_count', 'followings_count']
+        fields = ["posts_count", "is_followed", "followers_count", "followings_count"]
 
     annotate = {
-        "posts_count": Count('posts', distinct=True) if 'posts_count' in fields else None,
-        "is_followed": Count('followers', distinct=True, filter=Q(followers__follower__pk=user.id)) if 'is_followed' in fields
+        "posts_count": Count("posts", distinct=True) if "posts_count" in fields else None,
+        "is_followed": Count("followers", distinct=True, filter=Q(followers__follower__pk=user.id))
+        if "is_followed" in fields
         else None,
-        "followers_count": Count('followers', distinct=True) if 'followers_count' in fields else None,
-        "followings_count": Count('following', distinct=True) if 'followings_count' in fields else None
+        "followers_count": Count("followers", distinct=True) if "followers_count" in fields else None,
+        "followings_count": Count("following", distinct=True) if "followings_count" in fields else None,
     }
 
     queryset = queryset.annotate(**{key: value for key, value in annotate.items() if value})
 
-    return queryset.order_by('-id' if 'followers_count' not in fields else '-followers_count')
+    return queryset.order_by("-id" if "followers_count" not in fields else "-followers_count")
 
 
-def annotate_follows_queryset(user: User, queryset: QuerySet,
-                              mode: typing.Literal['follower'] | typing.Literal['following']) -> QuerySet:
+def annotate_follows_queryset(
+    user: User, queryset: QuerySet, mode: typing.Literal["follower"] | typing.Literal["following"]
+) -> QuerySet:
     user = user if isinstance(user, User) else user[0]
     queryset = queryset.prefetch_related(mode)
     annotate = {
-        "posts_count": Count(mode + '__posts', distinct=True),
-        "is_followed": Exists(Follow.objects.filter(follower_id=user.pk, following_id=OuterRef(mode + '__pk'))),
-        "followers_count": Count(mode + '__followers', distinct=True),
-        "followings_count": Count(mode + '__following', distinct=True)
+        "posts_count": Count(mode + "__posts", distinct=True),
+        "is_followed": Exists(Follow.objects.filter(follower_id=user.pk, following_id=OuterRef(mode + "__pk"))),
+        "followers_count": Count(mode + "__followers", distinct=True),
+        "followings_count": Count(mode + "__following", distinct=True),
     }
 
     queryset = queryset.annotate(**annotate)
 
-    return queryset.order_by('-followers_count')
+    return queryset.order_by("-followers_count")

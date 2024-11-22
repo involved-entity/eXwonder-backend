@@ -10,17 +10,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from posts.models import Comment, Post, Saved
+from posts.models import Comment, Post
 from tests.factories import CommentFactory, PostFactory, UserFactory
 
 User = get_user_model()
 
 BatchStubUsers = typing.List
 
-IMAGES_FOR_TEST_NAMES = [
-    "image_1.jpeg",
-    "image_2.jpg"
-]
+IMAGES_FOR_TEST_NAMES = ["image_1.jpeg", "image_2.jpg"]
 
 
 class ProxyFactories(object):
@@ -31,14 +28,16 @@ class ProxyFactories(object):
 
 class SendEndpointDetailRequestMixin:
     def send_endpoint_detail_request(self, client: APIClient, status__: int, **kwargs) -> Response:
-        detail_url = reverse_lazy(self.endpoint_detail, kwargs=kwargs)   # noqa
+        detail_url = reverse_lazy(self.endpoint_detail, kwargs=kwargs)  # noqa
         response = client.get(detail_url)
         assert response.status_code == status__
         return response
 
 
 class CheckUserDataMixin(SendEndpointDetailRequestMixin):
-    def check_user_data(self, client: APIClient, user: User, content: typing.Optional[typing.Dict] = None) -> typing.Dict:
+    def check_user_data(
+        self, client: APIClient, user: User, content: typing.Optional[typing.Dict] = None
+    ) -> typing.Dict:
         if not content:
             response = self.send_endpoint_detail_request(client, status.HTTP_200_OK, pk=user.pk)
             content = json.loads(response.content)
@@ -62,8 +61,13 @@ class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):
         assert response.status_code == status.HTTP_201_CREATED
         return json.loads(response.content)
 
-    def register_users(self, client: APIClient, users_count: int, stub: typing.Optional[bool] = False,
-                       users: typing.Optional[typing.List[User]] = None) -> BatchStubUsers:
+    def register_users(
+        self,
+        client: APIClient,
+        users_count: int,
+        stub: typing.Optional[bool] = False,
+        users: typing.Optional[typing.List[User]] = None,
+    ) -> BatchStubUsers:
         content_list = []
         users = users or self.User.stub_batch(users_count)
         for user in users:
@@ -92,51 +96,50 @@ class RegisterPostMixin(ProxyFactories):
                 response = client.post(reverse_lazy(self.REGISTER_POSTS_ENDPOINT), data=data)
                 assert response.status_code == status.HTTP_201_CREATED
         client.force_authenticate()
-        return Post.objects.get(signature=data["signature"])   # noqa
+        return Post.objects.get(signature=data["signature"])  # noqa
 
 
 class RegisterLikeMixin(RegisterPostMixin):
-    def register_like(self, client: APIClient, author: User, post: typing.Optional[Post] = None) \
-            -> typing.Tuple[User, int]:
-        post_id = post.id if post else self.register_post(client, author).pk   # noqa
+    def register_like(
+        self, client: APIClient, author: User, post: typing.Optional[Post] = None
+    ) -> typing.Tuple[User, int]:
+        post_id = post.id if post else self.register_post(client, author).pk  # noqa
         data = {"post_id": post_id}  # noqa
         client.force_authenticate(author)
-        response = client.post(reverse_lazy(self.endpoint_list), data=data)   # noqa
+        response = client.post(reverse_lazy(self.endpoint_list), data=data)  # noqa
         assert response.status_code == status.HTTP_201_CREATED
         client.force_authenticate()
         return author, post_id
 
 
 class RegisterCommentMixin(RegisterPostMixin):
-    REGISTER_COMMENTS_ENDPOINT: typing.Final = 'posts:comments-list'
+    REGISTER_COMMENTS_ENDPOINT: typing.Final = "posts:comments-list"
 
     def register_comment(self, client: APIClient, author: User, post: typing.Optional[Post] = None) -> Comment:
-        post_id = post.id if post else self.register_post(client, author).pk   # noqa
+        post_id = post.id if post else self.register_post(client, author).pk  # noqa
         client.force_authenticate(author)
-        data = {
-            "post_id": post_id,
-            "comment": self.Comment.stub().comment
-        }
-        response = client.post(reverse_lazy(self.REGISTER_COMMENTS_ENDPOINT), data=data)   # noqa
+        data = {"post_id": post_id, "comment": self.Comment.stub().comment}
+        response = client.post(reverse_lazy(self.REGISTER_COMMENTS_ENDPOINT), data=data)  # noqa
         client.force_authenticate()
         assert response.status_code == status.HTTP_201_CREATED
-        return Comment.objects.first()   # noqa
+        return Comment.objects.first()  # noqa
 
 
 class RegisterCommentLikeMixin(RegisterCommentMixin):
-    def register_comment_like(self, client: APIClient, author: User, comment: typing.Optional[Post] = None) \
-            -> typing.Tuple[User, int]:
-        comment_pk = comment.id if comment else self.register_comment(client, author).pk   # noqa
+    def register_comment_like(
+        self, client: APIClient, author: User, comment: typing.Optional[Post] = None
+    ) -> typing.Tuple[User, int]:
+        comment_pk = comment.id if comment else self.register_comment(client, author).pk  # noqa
         data = {"comment_id": comment_pk}  # noqa
         client.force_authenticate(author)
-        response = client.post(reverse_lazy(self.endpoint_list), data=data)   # noqa
+        response = client.post(reverse_lazy(self.endpoint_list), data=data)  # noqa
         assert response.status_code == status.HTTP_201_CREATED
         client.force_authenticate()
         return author, comment_pk
 
 
 class RegisterSavedPostMixin(RegisterPostMixin):
-    REGISTER_SAVED_POST_ENDPOINT: typing.Final = 'posts:saved-list'
+    REGISTER_SAVED_POST_ENDPOINT: typing.Final = "posts:saved-list"
 
     def register_saved_post(self, client: APIClient, author: User) -> int:
         post_id = self.register_post(client, author).pk
@@ -145,15 +148,10 @@ class RegisterSavedPostMixin(RegisterPostMixin):
         response = client.post(reverse_lazy(self.REGISTER_SAVED_POST_ENDPOINT), data=data)
         client.force_authenticate()
         assert response.status_code == status.HTTP_201_CREATED
-        return post_id   # noqa
+        return post_id  # noqa
 
 
-class RegisterObjectsMixin(
-    RegisterUsersMixin,
-    RegisterLikeMixin,
-    RegisterCommentLikeMixin,
-    RegisterSavedPostMixin
-):
+class RegisterObjectsMixin(RegisterUsersMixin, RegisterLikeMixin, RegisterCommentLikeMixin, RegisterSavedPostMixin):
     pass
 
 
@@ -161,10 +159,10 @@ class IterableFollowingRelationsMixin(object):
     def get_iterable(self, client: APIClient, stub: bool = False) -> typing.Iterable:
         relations = []
 
-        for user in super().get_iterable(client, False):   # noqa
+        for user in super().get_iterable(client, False):  # noqa
             client.force_authenticate(user)
             following = random.choice(User.objects.exclude(username=user.username))
-            response = client.post(reverse_lazy(self.endpoint_list), data={"following": following.pk})   # noqa
+            response = client.post(reverse_lazy(self.endpoint_list), data={"following": following.pk})  # noqa
             assert response.status_code == status.HTTP_201_CREATED
             assert user.following.count() == 1
             relations.append((user, following))
@@ -180,8 +178,12 @@ class AssertContentKeysMixin(object):
 
 
 class AssertResponseMixin(AssertContentKeysMixin):
-    def assert_response(self, response: Response, status__: typing.Optional[int] = status.HTTP_200_OK,
-                        needed_keys: typing.Optional[typing.Tuple] = None) -> typing.Dict | None:
+    def assert_response(
+        self,
+        response: Response,
+        status__: typing.Optional[int] = status.HTTP_200_OK,
+        needed_keys: typing.Optional[typing.Tuple] = None,
+    ) -> typing.Dict | None:
         assert response.status_code == status__
         if needed_keys:
             content = json.loads(response.content)
@@ -191,9 +193,10 @@ class AssertResponseMixin(AssertContentKeysMixin):
 
 
 class AssertPaginatedResponseMixin(AssertResponseMixin):
-    def assert_paginated_response(self, response: Response, needed_results_len: typing.Optional[int] = None) \
-            -> typing.Dict:
+    def assert_paginated_response(
+        self, response: Response, needed_results_len: typing.Optional[int] = None
+    ) -> typing.Dict:
         content = self.assert_response(response, needed_keys=("count", "next", "previous", "results"))
-        assert content["count"] == (needed_results_len or self.list_tests_count)   # noqa
-        assert len(content["results"]) == (needed_results_len or self.list_tests_count)   # noqa
+        assert content["count"] == (needed_results_len or self.list_tests_count)  # noqa
+        assert len(content["results"]) == (needed_results_len or self.list_tests_count)  # noqa
         return content

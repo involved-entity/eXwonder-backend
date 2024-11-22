@@ -1,6 +1,8 @@
+import os
+
 from django import template
 from environ import Env
-import os
+
 from core.settings import BASE_DIR
 
 env = Env()
@@ -12,5 +14,5 @@ register = template.Library()
 def reset_password_url(uid: str, token: str) -> str:
     return f'http://{env("PASSWORD_RESET_URL", default="localhost:80")}/reset-password/?uid={uid}&token={token}'
 
-register.simple_tag(reset_password_url)
 
+register.simple_tag(reset_password_url)

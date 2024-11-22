@@ -39,25 +39,27 @@ class TestUsersMy(AssertResponseMixin, GenericTest):
         return self.send_endpoint_detail_request(client, status.HTTP_200_OK), instance
 
     def assert_case_test(self, response: Response, *args) -> None:
-        self.assert_response(response, needed_keys=('user', 'availible_timezones'))
+        self.assert_response(response, needed_keys=("user", "availible_timezones"))
 
 
 class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
-    endpoint_list = 'users:account-list'
+    endpoint_list = "users:account-list"
 
     def test_users_search(self, api_client):
         super().make_test(api_client)
 
     def __generate_random_search_users(self, users_count: int) -> typing.Tuple[typing.Any, ...]:
-        return tuple(self.User.stub(username="searchuser" + ''.join(secrets.choice(string.ascii_letters)
-                                                                    for i in range(5))) for i in range(users_count))
+        return tuple(
+            self.User.stub(username="searchuser" + "".join(secrets.choice(string.ascii_letters) for i in range(5)))
+            for i in range(users_count)
+        )
 
     def case_test(self, client: APIClient, instance: User) -> Response:
         users = self.User.stub_batch(self.list_tests_count - 2)
         users.extend(self.__generate_random_search_users(2))
         self.register_users(client, self.list_tests_count, users=users)
         client.force_authenticate(instance)
-        return client.get(f'{reverse_lazy(self.endpoint_list)}?search=sea')
+        return client.get(f"{reverse_lazy(self.endpoint_list)}?search=sea")
 
     def assert_case_test(self, response: Response, *args) -> None:
         self.assert_paginated_response(response, 2)
@@ -67,7 +69,7 @@ class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
 
 
 class TestUsersFull(AssertResponseMixin, GenericTest):
-    endpoint_list = 'users:full-user'
+    endpoint_list = "users:full-user"
 
     def test_users_full(self, api_client):
         super().make_test(api_client)
@@ -76,12 +78,21 @@ class TestUsersFull(AssertResponseMixin, GenericTest):
         user_for_check = random.choice(User.objects.filter())
         self.register_post(client, user_for_check)
         client.force_authenticate(instance)
-        return client.get(f'{reverse_lazy(self.endpoint_list)}?username={user_for_check.username}&fields=all')
+        return client.get(f"{reverse_lazy(self.endpoint_list)}?username={user_for_check.username}&fields=all")
 
     def assert_case_test(self, response: Response, *args) -> None:
-        self.assert_response(response, needed_keys=(
-            'id', 'username', 'avatar', 'posts_count', 'is_followed', 'followers_count', 'followings_count'
-        ))
+        self.assert_response(
+            response,
+            needed_keys=(
+                "id",
+                "username",
+                "avatar",
+                "posts_count",
+                "is_followed",
+                "followers_count",
+                "followings_count",
+            ),
+        )
 
 
 class TestUsersUpdate(GenericTest):
@@ -97,10 +108,13 @@ class TestUsersUpdate(GenericTest):
         data = {
             "email": self.User.stub().email,
             "timezone": random.choice(pytz.common_timezones),
-            "is_2fa_enabled": True
+            "is_2fa_enabled": True,
         }
-        return (client.patch(reverse_lazy(self.endpoint_update), data=data), client,
-                User.objects.get(username=instance.username))
+        return (
+            client.patch(reverse_lazy(self.endpoint_update), data=data),
+            client,
+            User.objects.get(username=instance.username),
+        )
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -124,10 +138,7 @@ class TestUsersLogin(GenericTest):
         super().make_test(api_client, stub=True)
 
     def case_test(self, client: APIClient, instance: User) -> Response:
-        data = {
-            "username": instance.username,
-            "password": instance.password
-        }
+        data = {"username": instance.username, "password": instance.password}
         return client.post(reverse_lazy(self.endpoint_login), data=data)
 
     def assert_case_test(self, response: Response, *args) -> None:
@@ -147,11 +158,7 @@ class TestUsersPasswordChange(GenericTest):
     def case_test(self, client: APIClient, instance: User) -> typing.Tuple[Response, str, str]:
         client.force_authenticate(User.objects.get(username=instance.username))
         new_password = self.User.stub().password
-        data = {
-            "old_password": instance.password,
-            "new_password1": new_password,
-            "new_password2": new_password
-        }
+        data = {"old_password": instance.password, "new_password1": new_password, "new_password2": new_password}
         return client.post(reverse_lazy(self.endpoint_password_change), data=data), instance.username, new_password
 
     def assert_case_test(self, response: Response, *args) -> None:

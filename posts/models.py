@@ -4,13 +4,12 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
-
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
 
-def post_images_upload(instance: 'PostImage', filename: str) -> str:
+def post_images_upload(instance: "PostImage", filename: str) -> str:
     return f"{settings.POSTS_IMAGES_DIR}/{filename}"
 
 
@@ -19,11 +18,11 @@ class PostImage(models.Model):
     post = models.ForeignKey("Post", related_name="images", on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = _('Post image')
-        verbose_name_plural = _('Posts images')
+        verbose_name = _("Post image")
+        verbose_name_plural = _("Posts images")
 
     def __str__(self):
-        return f"Image for {self.post.pk}."   # noqa
+        return f"Image for {self.post.pk}."  # noqa
 
 
 @receiver(pre_delete, sender=PostImage)
@@ -37,11 +36,11 @@ class Post(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-id",
-        verbose_name = _('Post')
-        verbose_name_plural = _('Posts')
+        ordering = ("-id",)
+        verbose_name = _("Post")
+        verbose_name_plural = _("Posts")
 
-        db_table = 'posts'
+        db_table = "posts"
 
     def __str__(self):
         return f"{self.pk} post."
@@ -52,11 +51,11 @@ class PostLike(models.Model):
     post = models.ForeignKey(Post, related_name="likes", on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = _('Post like')
-        verbose_name_plural = _('Posts likes')
+        verbose_name = _("Post like")
+        verbose_name_plural = _("Posts likes")
 
     def __str__(self):
-        return f"{self.author.pk} like for {self.post.pk} post."   # noqa
+        return f"{self.author.pk} like for {self.post.pk} post."  # noqa
 
 
 class Comment(models.Model):
@@ -66,12 +65,12 @@ class Comment(models.Model):
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = "-time_added",
-        verbose_name = _('Comment')
-        verbose_name_plural = _('Comments')
+        ordering = ("-time_added",)
+        verbose_name = _("Comment")
+        verbose_name_plural = _("Comments")
 
     def __str__(self):
-        return f"{self.author.pk} comment for {self.post.pk}."   # noqa
+        return f"{self.author.pk} comment for {self.post.pk}."  # noqa
 
 
 class CommentLike(models.Model):
@@ -79,11 +78,11 @@ class CommentLike(models.Model):
     comment = models.ForeignKey(Comment, related_name="likes", on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = _('Comment like')
-        verbose_name_plural = _('Comments likes')
+        verbose_name = _("Comment like")
+        verbose_name_plural = _("Comments likes")
 
     def __str__(self):
-        return f"{self.author.pk} like for {self.comment.pk} comment."   # noqa
+        return f"{self.author.pk} like for {self.comment.pk} comment."  # noqa
 
 
 class Saved(models.Model):
@@ -93,8 +92,8 @@ class Saved(models.Model):
 
     class Meta:
         ordering = "-time_added", "-id"
-        verbose_name = _('Saved post')
-        verbose_name_plural = _('Saved posts')
+        verbose_name = _("Saved post")
+        verbose_name_plural = _("Saved posts")
 
     def __str__(self):
-        return f"Saved post {self.post.pk} by {self.owner.pk}"   # noqa
+        return f"Saved post {self.post.pk} by {self.owner.pk}"  # noqa
