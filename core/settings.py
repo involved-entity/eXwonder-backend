@@ -30,13 +30,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "rest_framework",
     "rest_framework.authtoken",
     "dj_rest_auth",
-    "drf_spectacular", 
+    "drf_spectacular",
     "corsheaders",
-
     "users.apps.UsersConfig",
     "posts.apps.PostsConfig",
 ]
@@ -54,7 +52,7 @@ MIDDLEWARE = [
 
 if not DEBUG:
     CORS_ALLOWED_ORIGINS = ["http://localhost:80"]
-else: 
+else:
     CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = ("GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS")
