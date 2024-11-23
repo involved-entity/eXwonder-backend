@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from posts.permissions import IsOwnerOrReadOnly
-from posts.services import CreateModelCustomMixin
+from posts.services.services import CreateModelCustomMixin
 
 
 class BaseLikeViewSet(CreateModelCustomMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
