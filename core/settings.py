@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "dj_rest_auth",
-    "drf_spectacular",
+    "drf_spectacular", 
     "corsheaders",
 
     "users.apps.UsersConfig",
@@ -52,7 +52,10 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:80"]
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = ["http://localhost:80"]
+else: 
+    CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = ("GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS")
 
