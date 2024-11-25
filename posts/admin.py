@@ -14,7 +14,11 @@ class SignatureFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        return queryset.filter(signature__gt="") if self.value() == "true" else queryset.filter(signature="")
+        if self.value() == "true":
+            return queryset.filter(signature__gt="")
+        elif self.value() == "false":
+            return queryset.filter(signature="")
+        return queryset
 
 
 @admin.register(Post)

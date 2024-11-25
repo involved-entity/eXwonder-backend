@@ -11,7 +11,11 @@ class EmailFilter(admin.SimpleListFilter):
         return (("true", "Yes"), ("false", "No"))
 
     def queryset(self, request, queryset):
-        return queryset.filter(email__isnull=False) if self.value() == "true" else queryset.filter(email__isnull=True)
+        if self.value() == "true":
+            return queryset.filter(email__isnull=False)
+        elif self.value() == "false":
+            return queryset.filter(email__isnull=True)
+        return queryset
 
 
 @admin.register(ExwonderUser)
