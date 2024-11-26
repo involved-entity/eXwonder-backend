@@ -228,7 +228,7 @@ class SavedViewSet(CreateModelCustomMixin, mixins.ListModelMixin, mixins.Destroy
 
     def get_queryset(self):
         queryset = self.request.user.saved_posts.filter()
-        return get_full_annotated_posts_queryset(self.request, queryset, annotated_field_prefix="post")
+        return get_full_annotated_posts_queryset(self.request, queryset, annotated_field_prefix="post").order_by("-time_added")
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = Saved.objects.filter(
