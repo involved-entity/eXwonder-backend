@@ -1,6 +1,9 @@
 from django.contrib import admin, messages
+from django.contrib.auth import get_user_model
 
 from users.models import ExwonderUser, Follow
+
+User = get_user_model()
 
 
 class EmailFilter(admin.SimpleListFilter):
@@ -23,6 +26,8 @@ class ExwonderUserAdmin(admin.ModelAdmin):
     fields = (
         "username",
         "email",
+        "name",
+        "description",
         "avatar",
         "timezone",
         "is_2fa_enabled",
@@ -39,6 +44,10 @@ class ExwonderUserAdmin(admin.ModelAdmin):
     actions = "set_superuser", "remove_superuser"
     search_fields = "username", "email"
     list_filter = "is_superuser", EmailFilter
+
+    @admin.display(ordering="desc")
+    def description(self, user: User) -> str:
+        return user.desc
 
     @admin.action(description="Give superuser permissions")
     def set_superuser(self, request, queryset):

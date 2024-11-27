@@ -56,6 +56,8 @@ class ExwonderUser(AbstractBaseUser, PermissionsMixin):
         },
     )
     email = models.EmailField(verbose_name=_("Email"), unique=True, null=True)
+    name = models.CharField(verbose_name=_("Name"), max_length=32, default="")
+    desc = models.CharField(verbose_name=_("Description"), max_length=1024, default="")
     avatar = models.ImageField(
         verbose_name=_("Avatar"), upload_to=get_uploaded_avatar_path, default=settings.DEFAULT_USER_AVATAR_PATH
     )

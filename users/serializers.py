@@ -31,6 +31,7 @@ class UserDefaultSerializer(serializers.ModelSerializer):
 
 class UserCustomSerializer(serializers.ModelSerializer):
     avatar = UserAvatarField()
+    description = serializers.CharField(source="desc")
 
     posts_count = serializers.IntegerField()
     is_followed = serializers.BooleanField()
@@ -39,7 +40,17 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "id", "username", "avatar", "posts_count", "is_followed", "followers_count", "followings_count"
+        fields = (
+            "id",
+            "username",
+            "name",
+            "description",
+            "avatar",
+            "posts_count",
+            "is_followed",
+            "followers_count",
+            "followings_count",
+        )
         extra_kwargs = {
             "posts_count": {"allow_null": True},
             "is_followed": {"allow_null": True},
@@ -50,10 +61,11 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     avatar = UserAvatarField(required=False)
+    description = serializers.CharField(source="desc", required=True)
 
     class Meta:
         model = User
-        fields = "id", "username", "password", "email", "avatar", "timezone", "is_2fa_enabled"
+        fields = "id", "username", "password", "email", "name", "description", "avatar", "timezone", "is_2fa_enabled"
         extra_kwargs = {
             "password": {"write_only": True},
             "email": {"required": False},
@@ -84,6 +96,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
         email_before_update = instance.email
 
         instance.email = validated_data.get("email", instance.email)
+        instance.name = validated_data.get("name", instance.name)
+        instance.desc = validated_data.get("description", instance.desc)
         instance.avatar = validated_data.get("avatar", instance.avatar)
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)

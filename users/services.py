@@ -72,7 +72,7 @@ def annotate_follows_queryset(
     queryset = queryset.prefetch_related(mode)
     annotate = {
         "posts_count": Count(mode + "__posts", distinct=True),
-        "is_followed": Exists(Follow.objects.filter(follower_id=user.pk, following_id=OuterRef(mode + "__pk"))),
+        "is_followed": Exists(Follow.objects.filter(follower_id=user.pk, following_id=OuterRef(mode + "__pk"))),  # noqa
         "followers_count": Count(mode + "__followers", distinct=True),
         "followings_count": Count(mode + "__following", distinct=True),
     }
