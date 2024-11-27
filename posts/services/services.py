@@ -31,14 +31,17 @@ class CreateModelCustomMixin(mixins.CreateModelMixin):
         return request.data[f"{self.entity_field}_id"]
 
     def create(self, request: Request, *args, **kwargs) -> Response:
-        entity_pk = self.__get_and_validate_post_id(request)
         serializer = self.get_serializer(data=request.data)  # noqa
         serializer.is_valid(raise_exception=True)
+        self.perform_create(request, serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, request: Request, serializer) -> None:
+        entity_pk = self.__get_and_validate_post_id(request)
         serializer.save(
             **{self.author_field: request.user},
             **{self.entity_field: get_object_or_404(self.entity_model, pk=entity_pk)},
         )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 def annotate_likes_count_and_is_liked_comments_queryset(request: Request, queryset: QuerySet) -> QuerySet:
