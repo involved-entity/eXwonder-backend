@@ -61,7 +61,7 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     avatar = UserAvatarField(required=False)
-    description = serializers.CharField(source="desc", required=True)
+    description = serializers.CharField(source="desc", required=False)
 
     class Meta:
         model = User
@@ -97,7 +97,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
         instance.email = validated_data.get("email", instance.email)
         instance.name = validated_data.get("name", instance.name)
-        instance.desc = validated_data.get("description", instance.desc)
+        instance.desc = validated_data.get("desc", instance.desc)
         instance.avatar = validated_data.get("avatar", instance.avatar)
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
