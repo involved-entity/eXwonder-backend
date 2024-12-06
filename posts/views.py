@@ -20,7 +20,7 @@ from posts.serializers import (
 )
 from posts.services import (
     BaseLikeViewSet,
-    CreateModelCustomMixin,
+    CreateModelMixin,
     annotate_likes_count_and_is_liked_comments_queryset,
     filter_posts_queryset_by_author,
     filter_posts_queryset_by_top,
@@ -89,7 +89,7 @@ class PostViewSet(
     lookup_url_kwarg = "id"
 
     def get_queryset(self):
-        queryset = Post.objects.filter()
+        queryset = Post.objects.filter()  # noqa
 
         if self.action != "retrieve":
             queryset, has_filtered = filter_posts_queryset_by_top(self.request, queryset)
@@ -160,7 +160,7 @@ class PostLikeViewSet(BaseLikeViewSet):
         description="Endpoint to delete your comment.",
     ),
 )
-class CommentViewSet(CreateModelCustomMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class CommentViewSet(CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = CommentSerializer
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     lookup_url_kwarg = "id"
@@ -219,7 +219,7 @@ class CommentLikeViewSet(BaseLikeViewSet):
         description="Endpoint to delete post from saved.",
     ),
 )
-class SavedViewSet(CreateModelCustomMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class SavedViewSet(CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     author_field = "owner"
 
     serializer_class = SavedSerializer

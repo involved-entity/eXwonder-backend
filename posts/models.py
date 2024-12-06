@@ -33,6 +33,7 @@ def mymodel_delete(sender, instance, **kwargs):
 class Post(models.Model):
     author = models.ForeignKey(User, related_name="posts", on_delete=models.CASCADE)
     signature = models.CharField(max_length=512, default="")
+    tags = models.ManyToManyField("Tag", related_name="posts", blank=True)
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -44,6 +45,20 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.pk} post."
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=32, unique=True)
+
+    class Meta:
+        ordering = ("-id",)
+        verbose_name = _("Tag")
+        verbose_name_plural = _("Tags")
+
+        db_table = "tags"
+
+    def __str__(self):
+        return self.name
 
 
 class PostLike(models.Model):

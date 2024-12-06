@@ -7,41 +7,35 @@ from django.core.cache import cache
 from django.db.models import Count, F, Q, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, serializers, status
 from rest_framework.request import Request
-from rest_framework.response import Response
 
-from posts.models import Post
+from posts.models import Post, PostImage, Tag
 
 User = get_user_model()
 
 
-class CreateModelCustomMixin(mixins.CreateModelMixin):
-    author_field = "author"
-    entity_model = Post
-    entity_field = None
+def extract_post_images_from_request_data(post: Post, data: typing.Mapping) -> typing.List[PostImage]:
+    post_images = []
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.entity_field = self.entity_model.__name__.lower()
+    for key, value in data.items():
+        if key.startswith("image"):
+            instance = PostImage(image=value, post=post)
+            if key == "image0":
+                post_images.insert(0, instance)
+            else:
+                post_images.append(instance)
 
-    def __get_and_validate_post_id(self, request: Request) -> int:
-        if (not request.data.get(f"{self.entity_field}_id")) or (int(request.data.get(f"{self.entity_field}_id")) < 1):
-            raise serializers.ValidationError()
-        return request.data[f"{self.entity_field}_id"]
+    return post_images
 
-    def create(self, request: Request, *args, **kwargs) -> Response:
-        serializer = self.get_serializer(data=request.data)  # noqa
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(request, serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def perform_create(self, request: Request, serializer) -> None:
-        entity_pk = self.__get_and_validate_post_id(request)
-        serializer.save(
-            **{self.author_field: request.user},
-            **{self.entity_field: get_object_or_404(self.entity_model, pk=entity_pk)},
-        )
+def get_or_create_tags(tags: typing.List[str]) -> QuerySet[Tag]:
+    existing_tags = Tag.objects.filter(name__in=tags)
+    existing_tag_names = set(existing_tags.values_list("name", flat=True))
+
+    new_tags = [Tag(name=name) for name in tags if name not in existing_tag_names]
+
+    Tag.objects.bulk_create(new_tags)
+    return Tag.objects.filter(name__in=tags)
 
 
 def annotate_likes_count_and_is_liked_comments_queryset(request: Request, queryset: QuerySet) -> QuerySet:

@@ -4,10 +4,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from posts.permissions import IsOwnerOrReadOnly
-from posts.services.services import CreateModelCustomMixin
+from posts.services.mixins import CreateModelMixin
 
 
-class BaseLikeViewSet(CreateModelCustomMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class BaseLikeViewSet(CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     entity_model = None
 

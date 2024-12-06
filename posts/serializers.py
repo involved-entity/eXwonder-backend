@@ -4,10 +4,12 @@ from datetime import datetime
 
 import pytz
 from django.conf import settings
+from django.db import transaction
 from django.utils.timesince import timesince
 from rest_framework import serializers
 
-from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved
+from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved, Tag
+from posts.services import extract_post_images_from_request_data, get_or_create_tags
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
@@ -33,6 +35,12 @@ class PostImageSerializer(serializers.ModelSerializer):
         return urllib.parse.urljoin(media_url, get_upload_crop_path(str(instance.image), PathImageTypeEnum.POST))
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ("id", "name")
+
+
 class PostSerializer(serializers.ModelSerializer):
     author = UserDefaultSerializer(read_only=True)
     images = PostImageSerializer(many=True, read_only=True)
@@ -44,6 +52,8 @@ class PostSerializer(serializers.ModelSerializer):
     is_commented = serializers.BooleanField(read_only=True)
     is_saved = serializers.BooleanField(read_only=True)
 
+    tags = TagSerializer(many=True, required=False)
+
     class Meta:
         model = Post
         fields = (
@@ -52,6 +62,7 @@ class PostSerializer(serializers.ModelSerializer):
             "signature",
             "time_added",
             "images",
+            "tags",
             "likes_count",
             "comments_count",
             "is_liked",
@@ -65,22 +76,18 @@ class PostSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError("Images are none.", code="invalid")
 
     def create(self, validated_data):
-        header_image = None
-        post_images = []
+        tags = validated_data.get("tags", [])
 
-        post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
-        post.save()
+        with transaction.atomic():
+            post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
+            post.save()
+            post_images = extract_post_images_from_request_data(post, self.context["request"].data)
+            post_images = PostImage.objects.bulk_create(post_images)  # noqa
+            tags = get_or_create_tags(tags)
+            post.tags.add(*tags)
 
-        for key, value in self.context["request"].data.items():
-            if key.startswith("image"):
-                instance = PostImage(image=value, post=post)
-                if key == "image0":
-                    post_images.insert(0, instance)
-                else:
-                    post_images.append(instance)
-
-        post_images = PostImage.objects.bulk_create(post_images)  # noqa
         make_center_crop.delay(str(post_images[0].image), PathImageTypeEnum.POST)
+
         return post
 
     def get_time_added(self, post):
