@@ -38,7 +38,7 @@ class PostImageSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = "name",
+        fields = ("name",)
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -86,7 +86,7 @@ class PostSerializer(serializers.ModelSerializer):
             tags = get_or_create_tags(tags)
             post.tags.add(*tags)
 
-        make_center_crop.delay(str(post_images[0].image), PathImageTypeEnum.POST)
+        make_center_crop.apply_async(args=[str(post_images[0].image), PathImageTypeEnum.POST], queue="high_priority")
 
         return post
 

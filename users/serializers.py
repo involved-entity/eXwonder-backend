@@ -108,7 +108,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         instance.save()
 
         if is_avatar_updated:
-            make_center_crop.delay(str(instance.avatar), PathImageTypeEnum.AVATAR)
+            make_center_crop.apply_async(args=[str(instance.avatar), PathImageTypeEnum.AVATAR], queue="high_priority")
 
         return instance
 

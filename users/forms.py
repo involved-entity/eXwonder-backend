@@ -25,6 +25,7 @@ class PasswordResetForm(PasswordResetFormCore):
     ) -> None:
         context["user"] = context["user"].id
 
-        send_reset_password_mail.delay(
-            subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name
+        send_reset_password_mail.apply_async(
+            args=[subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name],
+            queue="normal_priority",
         )

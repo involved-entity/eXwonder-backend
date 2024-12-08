@@ -123,7 +123,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
 
         if user.is_2fa_enabled and user.email:
             code = make_2fa_authentication(request.session, user)
-            send_2fa_code_mail_message.delay(user.email, code)
+            send_2fa_code_mail_message.apply_async(args=[user.email, code], queue="normal_priority")
             request.session.create()
 
             return Response(

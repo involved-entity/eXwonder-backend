@@ -71,7 +71,12 @@ def annotate_likes_and_comments_count_posts_queryset(
         "comments_count": Count(prefix + "comments", distinct=True),
     }
 
-    return queryset.annotate(**annotate).prefetch_related(prefix + "images").prefetch_related(prefix + "tags").select_related(prefix + "author")
+    return (
+        queryset.annotate(**annotate)
+        .prefetch_related(prefix + "images")
+        .prefetch_related(prefix + "tags")
+        .select_related(prefix + "author")
+    )
 
 
 def get_full_annotated_posts_queryset(
