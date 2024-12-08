@@ -15,7 +15,8 @@ from posts.serializers import (
     CommentSerializer,
     PostIDSerializer,
     PostLikeSerializer,
-    PostSerializer,
+    PostRequestSerializer,
+    PostResponseSerializer,
     SavedSerializer,
 )
 from posts.services import (
@@ -33,9 +34,9 @@ User = get_user_model()
 
 @extend_schema_view(
     create=extend_schema(
-        request=PostSerializer,
+        request=PostRequestSerializer,
         responses={
-            status.HTTP_201_CREATED: PostSerializer,
+            status.HTTP_201_CREATED: PostRequestSerializer,
             status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
             status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
         },
@@ -55,13 +56,13 @@ User = get_user_model()
                 type=str,
             ),
         ],
-        responses={status.HTTP_200_OK: PostSerializer, status.HTTP_403_FORBIDDEN: DetailedCodeSerializer},
+        responses={status.HTTP_200_OK: PostResponseSerializer, status.HTTP_403_FORBIDDEN: DetailedCodeSerializer},
         description="Endpoint to get posts of user or you or some posts tops.",
     ),
     retrieve=extend_schema(
         request=None,
         responses={
-            status.HTTP_200_OK: PostSerializer,
+            status.HTTP_200_OK: PostResponseSerializer,
             status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
             status.HTTP_404_NOT_FOUND: DetailedCodeSerializer,
         },
@@ -84,7 +85,7 @@ class PostViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    serializer_class = PostSerializer
+    serializer_class = PostResponseSerializer
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
     lookup_url_kwarg = "id"
 
@@ -100,6 +101,11 @@ class PostViewSet(
         else:
             queryset = get_full_annotated_posts_queryset(self.request, queryset)
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return PostRequestSerializer
+        return self.serializer_class
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

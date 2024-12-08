@@ -41,18 +41,63 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ("name",)
 
 
-class PostSerializer(serializers.ModelSerializer):
+class PostRequestSerializer(serializers.ModelSerializer):
     author = UserDefaultSerializer(read_only=True)
     images = PostImageSerializer(many=True, read_only=True)
-    time_added = serializers.SerializerMethodField(read_only=True)
 
-    likes_count = serializers.IntegerField(read_only=True)
-    comments_count = serializers.IntegerField(read_only=True)
-    is_liked = serializers.BooleanField(read_only=True)
-    is_commented = serializers.BooleanField(read_only=True)
-    is_saved = serializers.BooleanField(read_only=True)
+    tags = serializers.CharField(required=False)
 
-    tags = TagSerializer(many=True, required=False)
+    class Meta:
+        model = Post
+        fields = (
+            "id",
+            "author",
+            "signature",
+            "time_added",
+            "images",
+            "tags",
+        )
+        read_only_fields = ("time_added",)
+
+    def validate(self, attrs):
+        if "image0" in list(self.context["request"].data.keys()):
+            return attrs
+        else:
+            raise serializers.ValidationError("Images are none.", code="invalid")
+
+        for tag in self.context["request"].data.get("tags", "").split(","):
+            if len(tag) > 32:
+                raise serializers.ValidationError(f"Invalid length for '{tag}' tag.", code="invalid")
+
+    def create(self, validated_data):
+        tags = self.context["request"].data.get("tags", "")
+
+        with transaction.atomic():
+            post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
+            post.save()
+            post_images = extract_post_images_from_request_data(post, self.context["request"].data)
+            post_images = PostImage.objects.bulk_create(post_images)  # noqa
+            if len(tags):
+                tags = get_or_create_tags(tags.split(","))
+                post.tags.add(*tags)
+
+        make_center_crop.apply_async(args=[str(post_images[0].image), PathImageTypeEnum.POST], queue="high_priority")
+
+        return post
+
+
+class PostResponseSerializer(serializers.ModelSerializer):
+    author = UserDefaultSerializer()
+    images = PostImageSerializer(many=True)
+    time_added = serializers.SerializerMethodField()
+
+    likes_count = serializers.IntegerField()
+    comments_count = serializers.IntegerField()
+    is_liked = serializers.BooleanField()
+    is_commented = serializers.BooleanField()
+    is_saved = serializers.BooleanField()
+
+    tags = TagSerializer(many=True)
 
     class Meta:
         model = Post
@@ -69,26 +114,6 @@ class PostSerializer(serializers.ModelSerializer):
             "is_commented",
             "is_saved",
         )
-
-    def validate(self, attrs):
-        if "image0" in list(self.context["request"].data.keys()):
-            return attrs
-        raise serializers.ValidationError("Images are none.", code="invalid")
-
-    def create(self, validated_data):
-        tags = self.context["request"].data.get("tags[]", [])
-
-        with transaction.atomic():
-            post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
-            post.save()
-            post_images = extract_post_images_from_request_data(post, self.context["request"].data)
-            post_images = PostImage.objects.bulk_create(post_images)  # noqa
-            tags = get_or_create_tags(tags)
-            post.tags.add(*tags)
-
-        make_center_crop.apply_async(args=[str(post_images[0].image), PathImageTypeEnum.POST], queue="high_priority")
-
-        return post
 
     def get_time_added(self, post):
         return datetime_to_timezone(post.time_added, self.context["request"].user.timezone)
@@ -138,7 +163,7 @@ class CommentLikeSerializer(serializers.ModelSerializer):
 
 class SavedSerializer(serializers.ModelSerializer):
     owner = UserDefaultSerializer(read_only=True)
-    post = PostSerializer(required=False)
+    post = PostResponseSerializer(required=False)
 
     likes_count = serializers.IntegerField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
