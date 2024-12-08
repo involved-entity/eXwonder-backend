@@ -38,7 +38,7 @@ class PostImageSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ("id", "name")
+        fields = "name",
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -76,7 +76,7 @@ class PostSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError("Images are none.", code="invalid")
 
     def create(self, validated_data):
-        tags = validated_data.get("tags", [])
+        tags = self.context["request"].data.get("tags[]", [])
 
         with transaction.atomic():
             post = Post(author=validated_data["author"], signature=validated_data.get("signature", ""))
