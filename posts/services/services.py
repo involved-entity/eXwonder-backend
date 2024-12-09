@@ -88,18 +88,17 @@ def get_full_annotated_posts_queryset(
 
 def filter_posts_queryset_by_recommended(request: Request, queryset: QuerySet) -> QuerySet:
     liked_tags = (
-        request.user.likes.values("post__tags").annotate(tag_count=Count("post__tags")).order_by("-tag_count")[:3]
+        request.user.likes.select_related("post__tags")
+        .values("post__tags__id", "post__tags__name")
+        .annotate(likes_count=Count("id"))
+        .order_by("-likes_count")[:3]
     )
 
-    tag_ids = [tag["post__tags"] for tag in liked_tags]
+    tag_ids = [tag["post__tags__id"] for tag in liked_tags]
+    queryset = queryset.filter(tags__id__in=tag_ids).distinct()
+    queryset = get_full_annotated_posts_queryset(request, queryset).order_by("-likes_count")
 
-    recommended_posts = (
-        queryset.filter(tags__id__in=tag_ids)  # noqa
-        .annotate(likes_count=Count("likes"))
-        .order_by("-likes_count")
-    )
-
-    return get_full_annotated_posts_queryset(request, recommended_posts.distinct())
+    return queryset[:250]
 
 
 def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> QuerySet:

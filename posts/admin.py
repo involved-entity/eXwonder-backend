@@ -53,7 +53,7 @@ class PostLikeAdmin(admin.ModelAdmin):
     list_display = "id", "author__username", "post__id"
     list_display_links = "id", "author__username"
     ordering = ("-post__time_added",)
-    search_fields = "author__username", "post__id"
+    search_fields = "author__username", "post__id", "post__tags__name"
 
 
 @admin.register(Comment)
