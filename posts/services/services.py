@@ -95,7 +95,8 @@ def filter_posts_queryset_by_recommended(request: Request, queryset: QuerySet) -
     )
 
     tag_ids = [tag["post__tags__id"] for tag in liked_tags]
-    queryset = queryset.filter(tags__id__in=tag_ids).distinct()
+    followings = {following.following for following in request.user.following.select_related("following")}
+    queryset = queryset.filter(tags__id__in=tag_ids).exclude(author__in=followings | {request.user}).distinct()
     queryset = get_full_annotated_posts_queryset(request, queryset).order_by("-likes_count")
 
     return queryset[:250]
@@ -103,7 +104,7 @@ def filter_posts_queryset_by_recommended(request: Request, queryset: QuerySet) -
 
 def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> QuerySet:
     res_queryset = queryset.filter(
-        author__in=(following.following for following in request.user.following.select_related("following")),
+        author__in={following.following for following in request.user.following.select_related("following")},
         time_added__lt=timezone.now().replace(tzinfo=pytz.utc),
     )
     if request.user.penultimate_login:
