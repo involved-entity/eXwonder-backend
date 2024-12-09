@@ -23,7 +23,7 @@ class SignatureFilter(admin.SimpleListFilter):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = "id", "author", "signature_short", "time_added"
+    list_display = "id", "author", "signature_short", "time_added", "tags_short"
     list_display_links = "id", "author"
     ordering = ("-time_added",)
     list_per_page = 50
@@ -33,6 +33,10 @@ class PostAdmin(admin.ModelAdmin):
     @admin.display(description="Signature", ordering="signature")
     def signature_short(self, post: Post) -> str:
         return post.signature if len(post.signature) < 50 else f"{post.signature[:50]}..."
+
+    @admin.display(description="Tags")
+    def tags_short(self, post: Post) -> str:
+        return ", ".join(post.tags.filter()[:10].values_list("name", flat=True))
 
 
 @admin.register(PostImage)
