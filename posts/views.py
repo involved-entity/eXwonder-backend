@@ -51,7 +51,7 @@ User = get_user_model()
             OpenApiParameter(
                 name="top",
                 description="Filter posts by top. "
-                "Valid values is 'likes', 'recent' and 'updates'. "
+                "Valid values is 'likes', 'recent', 'updates' and 'recommended'. "
                 "Cant be used with 'user'.",
                 type=str,
             ),

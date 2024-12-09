@@ -29,13 +29,13 @@ def extract_post_images_from_request_data(post: Post, data: typing.Mapping) -> t
 
 
 def get_or_create_tags(tags: typing.List[str]) -> QuerySet[Tag]:
-    existing_tags = Tag.objects.filter(name__in=tags)
+    existing_tags = Tag.objects.filter(name__in=tags)  # noqa
     existing_tag_names = set(existing_tags.values_list("name", flat=True))
 
     new_tags = [Tag(name=name) for name in tags if name not in existing_tag_names]
 
-    Tag.objects.bulk_create(new_tags)
-    return Tag.objects.filter(name__in=tags)
+    Tag.objects.bulk_create(new_tags)  # noqa
+    return Tag.objects.filter(name__in=tags)  # noqa
 
 
 def annotate_likes_count_and_is_liked_comments_queryset(request: Request, queryset: QuerySet) -> QuerySet:
@@ -86,6 +86,22 @@ def get_full_annotated_posts_queryset(
     return annotate_with_user_data_posts_queryset(request, queryset, annotated_field_prefix)
 
 
+def filter_posts_queryset_by_recommended(request: Request, queryset: QuerySet) -> QuerySet:
+    liked_tags = (
+        request.user.likes.values("post__tags").annotate(tag_count=Count("post__tags")).order_by("-tag_count")[:3]
+    )
+
+    tag_ids = [tag["post__tags"] for tag in liked_tags]
+
+    recommended_posts = (
+        queryset.filter(tags__id__in=tag_ids)  # noqa
+        .annotate(likes_count=Count("likes"))
+        .order_by("-likes_count")
+    )
+
+    return get_full_annotated_posts_queryset(request, recommended_posts.distinct())
+
+
 def filter_posts_queryset_by_updates(request: Request, queryset: QuerySet) -> QuerySet:
     res_queryset = queryset.filter(
         author__in=(following.following for following in request.user.following.select_related("following")),
@@ -132,16 +148,18 @@ def filter_posts_queryset_by_author(
 def filter_posts_queryset_by_top(request: Request, queryset: QuerySet) -> typing.Tuple[QuerySet, bool]:
     top = request.query_params.get("top", None)
 
-    if top and top in ("likes", "recent", "updates"):
-        res_queryset = (
-            filter_posts_queryset_by_likes(request, queryset)
-            if top == "likes"
-            else (
-                filter_posts_queryset_by_recent(request, queryset)
-                if top == "recent"
-                else (filter_posts_queryset_by_updates(request, queryset))
-            )
-        )
+    if top and top in {"likes", "recent", "updates", "recommended"}:
+        res_queryset = None
+
+        match top:
+            case "likes":
+                res_queryset = filter_posts_queryset_by_likes(request, queryset)
+            case "recent":
+                res_queryset = filter_posts_queryset_by_recent(request, queryset)
+            case "updates":
+                res_queryset = filter_posts_queryset_by_updates(request, queryset)
+            case "recommended":
+                res_queryset = filter_posts_queryset_by_recommended(request, queryset)
 
         return res_queryset, True
 
