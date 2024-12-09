@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved
+from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved, Tag
 
 
 class SignatureFilter(admin.SimpleListFilter):
@@ -81,3 +81,16 @@ class SavedAdmin(admin.ModelAdmin):
     list_display_links = "id", "owner__username"
     ordering = ("-time_added",)
     search_fields = "owner__username", "post__id"
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_per_page = 50
+    list_display = "id", "name", "posts_count"
+    list_display_links = "id", "name"
+    ordering = ("name",)
+    search_fields = ("name",)
+
+    @admin.display(description="Posts count")
+    def posts_count(self, tag: Tag) -> int:
+        return Post.objects.filter(tags=tag).count()  # noqa
