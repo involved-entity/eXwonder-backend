@@ -91,7 +91,7 @@ def filter_posts_queryset_by_recommended(request: Request, queryset: QuerySet) -
         request.user.likes.select_related("post__tags")
         .values("post__tags__id", "post__tags__name")
         .annotate(likes_count=Count("id"))
-        .order_by("-likes_count")[:3]
+        .order_by("-likes_count")[:5]
     )
 
     tag_ids = [tag["post__tags__id"] for tag in liked_tags]

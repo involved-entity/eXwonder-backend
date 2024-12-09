@@ -147,7 +147,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "eXwonder",
     "DESCRIPTION": "Backend for simple photos hosting with elements of socal network",
-    "VERSION": "1.3.0",
+    "VERSION": "1.4.0",
 }
 
 REST_AUTH = {

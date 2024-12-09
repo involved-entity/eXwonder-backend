@@ -87,17 +87,17 @@ class PostRequestSerializer(serializers.ModelSerializer):
 
 
 class PostResponseSerializer(serializers.ModelSerializer):
-    author = UserDefaultSerializer()
-    images = PostImageSerializer(many=True)
-    time_added = serializers.SerializerMethodField()
+    author = UserDefaultSerializer(read_only=True)
+    images = PostImageSerializer(many=True, read_only=True)
+    time_added = serializers.SerializerMethodField(read_only=True)
 
-    likes_count = serializers.IntegerField()
-    comments_count = serializers.IntegerField()
-    is_liked = serializers.BooleanField()
-    is_commented = serializers.BooleanField()
-    is_saved = serializers.BooleanField()
+    likes_count = serializers.IntegerField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.BooleanField(read_only=True)
+    is_commented = serializers.BooleanField(read_only=True)
+    is_saved = serializers.BooleanField(read_only=True)
 
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post

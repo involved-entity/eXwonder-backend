@@ -11,3 +11,4 @@ static/
 .dockerignore
 .python-version
 uv.lock
+test.py
