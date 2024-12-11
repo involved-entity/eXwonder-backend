@@ -13,6 +13,7 @@ from posts.services import extract_post_images_from_request_data, get_or_create_
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop
+from notifications.tasks import send_notifications
 
 
 def datetime_to_timezone(
@@ -60,14 +61,18 @@ class PostRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ("time_added",)
 
     def validate(self, attrs):
-        if "image0" in list(self.context["request"].data.keys()):
-            return attrs
-        else:
-            raise serializers.ValidationError("Images are none.", code="invalid")
+        if "image0" not in list(self.context["request"].data.keys()):
+            raise serializers.ValidationError("No main image for post. Pass it in the 'image0' key.", code="invalid")
 
-        for tag in self.context["request"].data.get("tags", "").split(","):
-            if len(tag) > 32:
-                raise serializers.ValidationError(f"Invalid length for '{tag}' tag.", code="invalid")
+        tags = self.context["request"].data.get("tags", "").split(",")
+        invalid_tags = [tag for tag in tags if len(tag) > 32]
+
+        if invalid_tags:
+            raise serializers.ValidationError(
+                f"Invalid length for tags: '{','.join(invalid_tags)}' tag.", code="invalid"
+            )
+
+        return attrs
 
     def create(self, validated_data):
         tags = self.context["request"].data.get("tags", "")
@@ -82,6 +87,7 @@ class PostRequestSerializer(serializers.ModelSerializer):
                 post.tags.add(*tags)
 
         make_center_crop.apply_async(args=[str(post_images[0].image), PathImageTypeEnum.POST], queue="high_priority")
+        send_notifications.apply_async(args=[post.pk], queue="low_priority")
 
         return post
 
