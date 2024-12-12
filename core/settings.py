@@ -35,8 +35,10 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     "drf_spectacular",
     "corsheaders",
+    "channels",
     "users.apps.UsersConfig",
     "posts.apps.PostsConfig",
+    "notifications.apps.NotificationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -79,6 +81,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "core.wsgi.application"
+
+ASGI_APPLICATION = "core.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env("CHANNEL_REDIS_HOST", default="redis://localhost:6379/69")],
+        },
+    },
+}
 
 DATABASES = {
     "default": {
