@@ -60,14 +60,18 @@ class PostRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ("time_added",)
 
     def validate(self, attrs):
-        if "image0" in list(self.context["request"].data.keys()):
-            return attrs
-        else:
-            raise serializers.ValidationError("Images are none.", code="invalid")
+        if "image0" not in list(self.context["request"].data.keys()):
+            raise serializers.ValidationError("No main image for post. Pass it in the 'image0' key.", code="invalid")
 
-        for tag in self.context["request"].data.get("tags", "").split(","):
-            if len(tag) > 32:
-                raise serializers.ValidationError(f"Invalid length for '{tag}' tag.", code="invalid")
+        tags = self.context["request"].data.get("tags", "").split(",")
+        invalid_tags = [tag for tag in tags if len(tag) > 32]
+
+        if invalid_tags:
+            raise serializers.ValidationError(
+                f"Invalid length for tags: '{','.join(invalid_tags)}' tag.", code="invalid"
+            )
+
+        return attrs
 
     def create(self, validated_data):
         tags = self.context["request"].data.get("tags", "")
