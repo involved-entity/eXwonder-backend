@@ -6,7 +6,10 @@ from django.conf import settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 
 app = Celery(
-    "eXwonder", include=["users.tasks"], broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND
+    "eXwonder",
+    include=["users.tasks", "notifications.tasks"],
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
 )
 
 app.conf.task_queues = {
@@ -18,12 +21,17 @@ app.conf.task_queues = {
         "exchange": "high_priority",
         "routing_key": "high_priority",
     },
+    "low_priority": {
+        "exchange": "low_priority",
+        "routing_key": "low_priority",
+    },
 }
 
 app.conf.task_routes = {
     "users.tasks.make_center_crop": {"queue": "high_priority"},
     "users.tasks.send_reset_password_mail": {"queue": "normal_priority"},
     "users.tasks.send_2fa_code_mail_message": {"queue": "normal_priority"},
+    "notifications.tasks.send_notifications": {"queue": "low_priority"},
 }
 
 app.autodiscover_tasks()

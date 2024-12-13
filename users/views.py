@@ -135,7 +135,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
                 status=status.HTTP_202_ACCEPTED,
             )
 
-        return Response({"token": get_user_login_token(user)}, status=status.HTTP_200_OK)
+        return Response({"token": get_user_login_token(user), "user_id": user.id}, status=status.HTTP_200_OK)
 
     @action(methods=["get"], detail=False, url_name="logout", permission_classes=(permissions.IsAuthenticated,))
     def logout(self, request: Request) -> Response:
@@ -155,7 +155,10 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
             session.flush()
             session.set_expiry(0)
 
-            return Response({"token": get_user_login_token(get_object_or_404(User, pk=pk))}, status=status.HTTP_200_OK)
+            return Response(
+                {"token": get_user_login_token(get_object_or_404(User, pk=pk)), "user_id": pk},
+                status=status.HTTP_200_OK,
+            )
 
         return Response(
             {"detail": "This 2FA code is invalid. Regenerate it can help you.", "code": "CODE_INVALID"},
