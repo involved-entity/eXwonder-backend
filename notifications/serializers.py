@@ -6,7 +6,6 @@ from users.serializers import UserDefaultSerializer
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    recipient = UserDefaultSerializer()
     receiver = serializers.SerializerMethodField()
     time_added = serializers.SerializerMethodField()
 
