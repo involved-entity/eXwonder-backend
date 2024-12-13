@@ -12,8 +12,8 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = "id", "recipient", "receiver", "is_read", "time_added"
-        read_only_fields = "recipient", "receiver", "is_read", "time_added"
+        fields = "id", "receiver", "is_read", "time_added"
+        read_only_fields = "receiver", "is_read", "time_added"
 
     def get_receiver(self, instance: Notification) -> dict:
         return UserDefaultSerializer(instance=instance.post.author).data
