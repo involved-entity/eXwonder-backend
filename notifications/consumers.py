@@ -24,8 +24,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 await self.authenticate(data.get("token"), data.get("user_id"))
             case "get_unreaded_notifications":
                 await self.return_unreaded_notifications()
-            case "mark_all_readed":
-                await database_sync_to_async(self.mark_all_readed)()
+            case "mark_read":
+                await database_sync_to_async(self.mark_read)(data.get("id"))
+            case "mark_all_read":
+                await database_sync_to_async(self.mark_all_read)()
 
     async def return_unreaded_notifications(self):
         payload = []
@@ -37,7 +39,15 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
         await self.send(text_data=json.dumps({"type": "get_unreaded_notifications", "payload": payload}))
 
-    def mark_all_readed(self):
+    def mark_read(self, pk: int):
+        if pk:
+            from notifications.models import Notification
+
+            Notification.objects.select_related("recipient").filter(recipient__id=self.user_id, pk=pk).update(
+                is_read=True
+            )
+
+    def mark_all_read(self):
         from notifications.models import Notification
 
         Notification.objects.select_related("recipient").filter(recipient__id=self.user_id, is_read=False).update(
@@ -54,7 +64,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         )
 
     async def notify(self, event):
-        await self.send(text_data=json.dumps({"payload": event["payload"]}))
+        await self.send(text_data=json.dumps({"type": "notify", "payload": event["payload"]}))
 
     async def authenticate(self, token: str, user_id: int):
         token = await database_sync_to_async(self.check_token)(token)
