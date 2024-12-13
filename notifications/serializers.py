@@ -13,8 +13,8 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = "recipient", "reciever", "signature", "time_added"
-        read_only_fields = "recipient", "reciever", "signature", "time_added"
+        fields = "id", "recipient", "reciever", "signature", "is_read", "time_added"
+        read_only_fields = "recipient", "reciever", "signature", "is_read", "time_added"
 
     def get_reciever(self, instance: Notification) -> dict:
         return UserDefaultSerializer(instance=instance.post.author).data
