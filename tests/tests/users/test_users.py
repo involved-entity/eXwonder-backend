@@ -50,8 +50,8 @@ class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
 
     def __generate_random_search_users(self, users_count: int) -> typing.Tuple[typing.Any, ...]:
         return tuple(
-            self.User.stub(username="searchuser" + "".join(secrets.choice(string.ascii_letters) for i in range(5)))
-            for i in range(users_count)
+            self.User.stub(username="searchuser" + "".join(secrets.choice(string.ascii_letters) for _ in range(5)))
+            for _ in range(users_count)
         )
 
     def case_test(self, client: APIClient, instance: User) -> Response:
@@ -86,6 +86,8 @@ class TestUsersFull(AssertResponseMixin, GenericTest):
             needed_keys=(
                 "id",
                 "username",
+                "name",
+                "description",
                 "avatar",
                 "posts_count",
                 "is_followed",
@@ -108,6 +110,8 @@ class TestUsersUpdate(GenericTest):
         data = {
             "email": self.User.stub().email,
             "timezone": random.choice(pytz.common_timezones),
+            "name": "yea, test",
+            "description": "test desc",
             "is_2fa_enabled": True,
         }
         return (
@@ -118,14 +122,17 @@ class TestUsersUpdate(GenericTest):
 
     def assert_case_test(self, response: Response, *args) -> None:
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        args[0].force_authenticate(args[1])
-        response = args[0].get(reverse_lazy(self.endpoint_detail))
+        client, user = args[0], args[1]
+        client.force_authenticate(user)
+        response = client.get(reverse_lazy(self.endpoint_detail))
         content = json.loads(response.content)
-        assert content["user"]["id"] == args[1].pk
-        assert content["user"]["username"] == args[1].username
-        assert content["user"]["email"] == args[1].email
-        assert content["user"]["timezone"] == args[1].timezone
-        assert content["user"]["is_2fa_enabled"] == args[1].is_2fa_enabled
+        assert content["user"]["id"] == user.pk
+        assert content["user"]["username"] == user.username
+        assert content["user"]["name"] == user.name
+        assert content["user"]["description"] == user.desc
+        assert content["user"]["email"] == user.email
+        assert content["user"]["timezone"] == user.timezone
+        assert content["user"]["is_2fa_enabled"] == user.is_2fa_enabled
         return content
 
 
@@ -144,7 +151,8 @@ class TestUsersLogin(GenericTest):
     def assert_case_test(self, response: Response, *args) -> None:
         content = json.loads(response.content)
         assert response.status_code == status.HTTP_200_OK
-        assert "token" in list(content.keys())
+        keys = list(content.keys())
+        assert "token" in keys and "user_id" in keys
 
 
 class TestUsersPasswordChange(GenericTest):
