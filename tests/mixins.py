@@ -3,6 +3,7 @@ import os
 import random
 import typing
 
+import faker
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
@@ -81,11 +82,13 @@ class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):
 
 class RegisterPostMixin(ProxyFactories):
     REGISTER_POSTS_ENDPOINT: typing.Final = "posts:posts-list"
+    TAGS_COUNT: typing.Final = 5
 
     def register_post(self, client: APIClient, author: User) -> Post:
         client.force_authenticate(author)
         data = {
             "signature": self.Post.stub().signature,
+            "tags": ", ".join((faker.Faker().user_name() for _ in range(self.TAGS_COUNT))),
         }
         image_1 = os.path.join(settings.STATICFILES_DIRS[0], settings.TEST_IMAGES_DIR, IMAGES_FOR_TEST_NAMES[0])
         image_2 = os.path.join(settings.STATICFILES_DIRS[0], settings.TEST_IMAGES_DIR, IMAGES_FOR_TEST_NAMES[1])

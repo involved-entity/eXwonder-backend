@@ -1,6 +1,7 @@
 """
 TESTS TOTAL TODO:
 1. User returned fields   +
+2. Post returned fields   +
 """
 
 import typing

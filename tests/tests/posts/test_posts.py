@@ -19,6 +19,7 @@ POST_NEEDED_FIELDS = (
     "signature",
     "time_added",
     "images",
+    "tags",
     "likes_count",
     "comments_count",
     "is_liked",
