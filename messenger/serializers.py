@@ -5,21 +5,6 @@ from messenger.models import Chat, Message
 from users.serializers import UserDefaultSerializer
 
 
-class ChatSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    last_message = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Chat
-        fields = "id", "user", "last_message"
-
-    def get_user(self, instance: Chat) -> dict:
-        return UserDefaultSerializer(instance=instance.members.exclude(id=self.context["request"].user.id)[0]).data
-
-    def get_last_message(self, instance: Chat) -> str | None:
-        return instance.messages.order_by("-time_added").first().body  # noqa
-
-
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserDefaultSerializer()
     receiver = UserDefaultSerializer()
@@ -35,3 +20,19 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def get_time_updated(self, instance: Message) -> dict:
         return datetime_to_timezone(instance.time_updated, self.context["request"].user.timezone)
+
+
+class ChatSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chat
+        fields = "id", "user", "last_message"
+
+    def get_user(self, instance: Chat) -> dict:
+        return UserDefaultSerializer(instance=instance.members.exclude(id=self.context["request"].user.id)[0]).data
+
+    def get_last_message(self, instance: Chat) -> dict:
+        message = instance.messages.order_by("-time_added").first()   # noqa
+        return MessageSerializer(instance=message).data
