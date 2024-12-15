@@ -4,10 +4,10 @@ from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 
+from common.services import datetime_to_timezone
 from notifications.tasks import send_notifications
 from posts.models import Comment, CommentLike, Post, PostImage, PostLike, Saved, Tag
 from posts.services import extract_post_images_from_request_data, get_or_create_tags
-from posts.services.services import datetime_to_timezone
 from users.serializers import UserDefaultSerializer
 from users.services import PathImageTypeEnum, get_upload_crop_path
 from users.tasks import make_center_crop

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
+from common.services import datetime_to_timezone
 from notifications.models import Notification
-from posts.services.services import datetime_to_timezone
 from users.serializers import UserDefaultSerializer
 
 

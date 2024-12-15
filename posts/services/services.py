@@ -1,5 +1,4 @@
 import typing
-from datetime import datetime
 
 import pytz
 from django.conf import settings
@@ -8,7 +7,6 @@ from django.core.cache import cache
 from django.db.models import Count, F, Q, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.timesince import timesince
 from rest_framework.request import Request
 
 from posts.models import Post, PostImage, Tag
@@ -166,10 +164,3 @@ def filter_posts_queryset_by_top(request: Request, queryset: QuerySet) -> typing
         return res_queryset, True
 
     return queryset, False
-
-
-def datetime_to_timezone(
-    dt: datetime, timezone: str, attribute_name: typing.Optional[str] = "time_added"
-) -> typing.Dict:
-    dt = pytz.timezone(timezone).localize(datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second))
-    return {attribute_name: timesince(dt + dt.utcoffset()), "timezone": timezone}

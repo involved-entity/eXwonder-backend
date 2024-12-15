@@ -36,9 +36,11 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "channels",
+    "common.apps.CommonConfig",
     "users.apps.UsersConfig",
     "posts.apps.PostsConfig",
     "notifications.apps.NotificationsConfig",
+    "messenger.apps.MessengerConfig",
 ]
 
 MIDDLEWARE = [
