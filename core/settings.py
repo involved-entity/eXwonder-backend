@@ -176,6 +176,7 @@ DEFAULT_USER_AVATAR_PATH = "default-user-icon.jpg"
 CUSTOM_USER_AVATARS_DIR = "avatars"
 POSTS_IMAGES_DIR = "posts_images"
 TEST_IMAGES_DIR = "test_images"
+MESSAGES_ATTACHMENTS_DIR = "messages_attachments"
 
 TOKEN_EXP_TIME = timedelta(days=30)
 LAST_LOGIN_UPDATE_TIME = timedelta(hours=1)
