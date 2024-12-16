@@ -49,7 +49,7 @@ class MessengerConsumer(CommonConsumer):
                 await self.channel_layer.group_send(
                     f"chat_{message.chat.pk}",  # noqa
                     {
-                        "type": "read_message",
+                        "type": "send_read_message",
                         "message": message,
                     },
                 )
@@ -58,24 +58,50 @@ class MessengerConsumer(CommonConsumer):
                 await self.channel_layer.group_send(
                     f"chat_{message.chat.pk}",  # noqa
                     {
-                        "type": "delete_message",
+                        "type": "send_delete_message",
                         "message": message,
                     },
                 )
             case "edit_message":
                 message = await self.edit_message(data)
                 await self.channel_layer.group_send(
-                    f"chat_{message.chat.id}", {"type": "edit_message", "message": message}
+                    f"chat_{message.chat.id}", {"type": "send_edit_message", "message": message}
                 )
             case "delete_chat":
                 chat = await self.mark_as(data, mark_chat, is_delete=True)
                 await self.channel_layer.group_send(
                     f"chat_{chat.pk}",  # noqa
                     {
-                        "type": "delete_chat",
+                        "type": "send_delete_chat",
                         "chat": chat,
                     },
                 )
+
+    async def send_read_message(self, message):
+        from messenger.serializers import MessageSerializer
+
+        await self.send(
+            text_data=json.dumps({"type": "send_read_message", "message": MessageSerializer(instance=message).data})
+        )
+
+    async def send_delete_message(self, message):
+        from messenger.serializers import MessageSerializer
+
+        await self.send(
+            text_data=json.dumps({"type": "send_delete_message", "message": MessageSerializer(instance=message).data})
+        )
+
+    async def send_edit_message(self, message):
+        from messenger.serializers import MessageSerializer
+
+        await self.send(
+            text_data=json.dumps({"type": "send_edit_message", "message": MessageSerializer(instance=message).data})
+        )
+
+    async def send_delete_chat(self, chat):
+        from messenger.serializers import ChatSerializer
+
+        await self.send(text_data=json.dumps({"type": "send_delete_chat", "chat": ChatSerializer(instance=chat).data}))
 
     async def connect_to_chats(self):
         from messenger.serializers import ChatSerializer
