@@ -6,13 +6,13 @@ from django.db.models import QuerySet
 
 def get_chats(user_id: int) -> QuerySet:
     User = get_user_model()  # noqa
-    return User.objects.get(pk=user_id).chats.prefetch_related("members", "messages").filter(is_delete=False)
+    return list(User.objects.get(pk=user_id).chats.prefetch_related("members", "messages").filter(is_delete=False))
 
 
 def get_messages_in_chat(chat: int):
     from messenger.models import Chat
 
-    return Chat.objects.get(pk=chat).messages.filter()  # noqa
+    return list(Chat.objects.get(pk=chat).messages.filter())  # noqa
 
 
 def create_chat(receiver: int, user_id: int):

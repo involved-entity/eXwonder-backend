@@ -19,7 +19,6 @@ class MessengerConsumer(CommonConsumer):
     chats: typing.List[str]
 
     async def connect(self):
-        await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -28,6 +27,7 @@ class MessengerConsumer(CommonConsumer):
 
     async def create_group(self, user_id: int):
         self.user_id = user_id
+        await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
@@ -105,7 +105,7 @@ class MessengerConsumer(CommonConsumer):
 
     async def connect_to_chats(self):
         from messenger.serializers import ChatSerializer
-
+        
         chats = await database_sync_to_async(get_chats)(self.user_id)
 
         for chat in chats:

@@ -13,7 +13,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = "id", "sender", "receiver", "body", "attachment", "time_added", "time_updated", "is_read"
+        fields = "id", "chat", "sender", "receiver", "body", "attachment", "time_added", "time_updated", "is_read"
 
     def get_time_added(self, instance: Message) -> dict:
         return datetime_to_timezone(instance.time_added, self.context["request"].user.timezone)
