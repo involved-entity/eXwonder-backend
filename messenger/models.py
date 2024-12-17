@@ -26,9 +26,8 @@ class Chat(models.Model):
         return f"{self.id} chat"  # noqa
 
     def save(self, *args, **kwargs):
-        if self.pk is None:
-            if self.members.count() > 2:  # noqa
-                raise ValidationError(_("A chat can have no more than 2 members."))
+        if self.id and self.members.count() > 2:  # noqa
+            raise ValidationError(_("A chat can have no more than 2 members."))
         super().save(*args, **kwargs)
 
 

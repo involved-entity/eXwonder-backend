@@ -1,3 +1,4 @@
+import base64
 import json
 import typing
 
@@ -9,6 +10,8 @@ from messenger.services import (
     create_message,
     edit_message,
     get_chats,
+    get_current_user,
+    get_message,
     get_messages_in_chat,
     mark_chat,
     mark_message,
@@ -17,8 +20,10 @@ from messenger.services import (
 
 class MessengerConsumer(CommonConsumer):
     chats: typing.List[str]
+    user: "User"
 
     async def connect(self):
+        self.chats = []
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -26,8 +31,8 @@ class MessengerConsumer(CommonConsumer):
             _ = (await self.channel_layer.group_discard(chat, self.channel_name) for chat in self.chats)
 
     async def create_group(self, user_id: int):
-        self.user_id = user_id
-        await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
+        self.user = await database_sync_to_async(get_current_user)(user_id)
+        await self.channel_layer.group_add(f"user_{self.user.id}", self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
@@ -50,7 +55,7 @@ class MessengerConsumer(CommonConsumer):
                     f"chat_{message.chat.pk}",  # noqa
                     {
                         "type": "send_read_message",
-                        "message": message,
+                        "message": message.id,
                     },
                 )
             case "delete_message":
@@ -59,13 +64,13 @@ class MessengerConsumer(CommonConsumer):
                     f"chat_{message.chat.pk}",  # noqa
                     {
                         "type": "send_delete_message",
-                        "message": message,
+                        "message": message.id,
                     },
                 )
             case "edit_message":
                 message = await self.edit_message(data)
                 await self.channel_layer.group_send(
-                    f"chat_{message.chat.id}", {"type": "send_edit_message", "message": message}
+                    f"chat_{message.chat.id}", {"type": "send_edit_message", "message": message.id}
                 )
             case "delete_chat":
                 chat = await self.mark_as(data, mark_chat, is_delete=True)
@@ -73,46 +78,44 @@ class MessengerConsumer(CommonConsumer):
                     f"chat_{chat.pk}",  # noqa
                     {
                         "type": "send_delete_chat",
-                        "chat": chat,
+                        "chat": chat.id,
                     },
                 )
 
     async def send_read_message(self, message):
-        from messenger.serializers import MessageSerializer
-
-        await self.send(
-            text_data=json.dumps({"type": "send_read_message", "message": MessageSerializer(instance=message).data})
-        )
+        await self.send(text_data=json.dumps({"type": "send_read_message", "message": message}))
 
     async def send_delete_message(self, message):
-        from messenger.serializers import MessageSerializer
-
-        await self.send(
-            text_data=json.dumps({"type": "send_delete_message", "message": MessageSerializer(instance=message).data})
-        )
+        await self.send(text_data=json.dumps({"type": "send_delete_message", "message": message}))
 
     async def send_edit_message(self, message):
         from messenger.serializers import MessageSerializer
 
+        message = await database_sync_to_async(get_message)(message)
         await self.send(
-            text_data=json.dumps({"type": "send_edit_message", "message": MessageSerializer(instance=message).data})
+            text_data=json.dumps(
+                {
+                    "type": "send_edit_message",
+                    "message": MessageSerializer(instance=message, context={"user": self.user}).data,
+                }
+            )
         )
 
     async def send_delete_chat(self, chat):
-        from messenger.serializers import ChatSerializer
-
-        await self.send(text_data=json.dumps({"type": "send_delete_chat", "chat": ChatSerializer(instance=chat).data}))
+        await self.send(text_data=json.dumps({"type": "send_delete_chat", "chat": chat}))
 
     async def connect_to_chats(self):
         from messenger.serializers import ChatSerializer
-        
-        chats = await database_sync_to_async(get_chats)(self.user_id)
+
+        chats = await database_sync_to_async(get_chats)(self.user)
 
         for chat in chats:
             self.chats.append(f"chat_{chat.id}")
             await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
 
-        payload = ChatSerializer(chats, many=True).data
+        payload = await database_sync_to_async(
+            lambda: ChatSerializer(chats, many=True, context={"user": self.user}).data
+        )()
 
         await self.send(text_data=json.dumps({"type": "connect_to_chats", "payload": payload}))
 
@@ -121,15 +124,21 @@ class MessengerConsumer(CommonConsumer):
 
         chat = data["chat"]
         messages = await database_sync_to_async(get_messages_in_chat)(chat)
-        payload = MessageSerializer(messages, many=True).data
+        payload = MessageSerializer(messages, many=True, context={"user": self.user}).data
         await self.send(text_data=json.dumps({"type": "get_chat_history", "chat": chat, "payload": payload}))
 
     async def start_chat(self, data: dict):
+        from messenger.serializers import ChatSerializer
+
         receiver = data["receiver"]
-        chat = await database_sync_to_async(create_chat)(receiver, self.user_id)
+        chat = await database_sync_to_async(create_chat)(receiver, self.user)
         self.chats.append(f"chat_{chat.id}")
         await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
         await self.channel_layer.group_send(f"user_{receiver}", {"type": "connect_to_chat", "chat": chat})
+        payload = await database_sync_to_async(
+            lambda: ChatSerializer(instance=chat, context={"user": self.user}).data
+        )()
+        await self.send(text_data=json.dumps({"type": "chat_started", "payload": payload}))
 
     async def connect_to_chat(self, event):
         from messenger.serializers import ChatSerializer
@@ -137,20 +146,23 @@ class MessengerConsumer(CommonConsumer):
         chat = event["chat"]
         self.chats.append(f"chat_{chat.id}")
         await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
-        payload = ChatSerializer(chat, many=True).data
+        payload = await database_sync_to_async(
+            lambda: ChatSerializer(chat, many=True, context={"user": self.user}).data
+        )()
         await self.send(text_data=json.dumps({"type": "connect_to_chat", "payload": payload}))
 
     async def send_message(self, data: dict):
         chat_id = data["chat_id"]
         receiver = data["receiver"]
         body = data.get("body", None)
-        attachment = data.get("attachment", None)
-        message = await database_sync_to_async(create_message)(receiver, body, attachment, self.user_id)
+        attachment = base64.b64decode(data["attachment"]) if data.get("attachment", None) else None
+        name = data.get("attachment_name", None)
+        message = await database_sync_to_async(create_message)(chat_id, receiver, body, attachment, name, self.user)
         await self.channel_layer.group_send(
             f"chat_{chat_id}",
             {
                 "type": "on_message",
-                "message": message,
+                "message": message.id,
             },
         )
 
@@ -162,10 +174,10 @@ class MessengerConsumer(CommonConsumer):
     async def on_message(self, event: dict):
         from messenger.serializers import MessageSerializer
 
-        message = event["message"]
-        payload = MessageSerializer(instance=message).data
+        message = await database_sync_to_async(get_message)(event["message"])
+        payload = MessageSerializer(instance=message, context={"user": self.user}).data
         await self.send(text_data=json.dumps({"type": "on_message", "payload": payload}))
 
     async def mark_as(self, data: dict, callback: typing.Callable, **kwargs):
         pk = data["id"]
-        await database_sync_to_async(callback)(pk, **kwargs)
+        await database_sync_to_async(callback)(pk, self.user, **kwargs)
