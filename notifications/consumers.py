@@ -14,7 +14,7 @@ class NotificationConsumer(CommonConsumer):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def create_group(self, user_id: int):
-        self.group_name = f"user_{user_id}"
+        self.group_name = f"user_{user_id}_notifications"
         self.user_id = user_id
         await self.channel_layer.group_add(self.group_name, self.channel_name)
 

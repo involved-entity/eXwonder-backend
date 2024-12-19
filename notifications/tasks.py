@@ -25,7 +25,7 @@ def send_notifications(post_id: int) -> None:
 
     for notification in notifications:
         async_to_sync(channel_layer.group_send)(
-            f"user_{notification.recipient.id}",
+            f"user_{notification.recipient.id}_notifications",
             {  # noqa
                 "type": "notify",
                 "payload": NotificationSerializer(instance=notification).data,

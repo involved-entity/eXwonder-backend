@@ -32,6 +32,12 @@ def get_chats(user: "User") -> QuerySet:
     return list(user.chats.prefetch_related("members", "messages").filter(is_delete=False))
 
 
+def get_chat(pk: int):
+    from messenger.models import Chat
+
+    return Chat.objects.prefetch_related("members", "messages").get(pk=pk)
+
+
 def get_messages_in_chat(chat: int):
     from messenger.models import Chat
 
@@ -44,7 +50,7 @@ def create_chat(receiver: int, user: "User"):
     User = get_user_model()  # noqa
     removed_chat = Chat.objects.filter(Q(members__id=receiver) & Q(members__id=user.id))  # noqa
 
-    if removed_chat:
+    if removed_chat.exists():
         chat = removed_chat[0]
         chat.is_delete = False
         chat.save()

@@ -9,6 +9,7 @@ from messenger.services import (
     create_chat,
     create_message,
     edit_message,
+    get_chat,
     get_chats,
     get_current_user,
     get_message,
@@ -33,7 +34,7 @@ class MessengerConsumer(CommonConsumer):
 
     async def create_group(self, user_id: int):
         self.user = await database_sync_to_async(get_current_user)(user_id)
-        await self.channel_layer.group_add(f"user_{self.user.id}", self.channel_name)
+        await self.channel_layer.group_add(f"user_{self.user.id}_messenger", self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
@@ -146,7 +147,7 @@ class MessengerConsumer(CommonConsumer):
         chat = await database_sync_to_async(create_chat)(receiver, self.user)
         self.chats.append(f"chat_{chat.id}")
         await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
-        await self.channel_layer.group_send(f"user_{receiver}", {"type": "connect_to_chat", "chat": chat})
+        await self.channel_layer.group_send(f"user_{receiver}_messenger", {"type": "connect_to_chat", "chat": chat.id})
         payload = await database_sync_to_async(
             lambda: ChatSerializer(instance=chat, context={"user": self.user}).data
         )()
@@ -156,11 +157,10 @@ class MessengerConsumer(CommonConsumer):
         from messenger.serializers import ChatSerializer
 
         chat = event["chat"]
-        self.chats.append(f"chat_{chat.id}")
-        await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
-        payload = await database_sync_to_async(
-            lambda: ChatSerializer(chat, many=True, context={"user": self.user}).data
-        )()
+        self.chats.append(f"chat_{chat}")
+        await self.channel_layer.group_add(f"chat_{chat}", self.channel_name)
+        chat = await database_sync_to_async(get_chat)(chat)
+        payload = await database_sync_to_async(lambda: ChatSerializer(chat, context={"user": self.user}).data)()
         await self.send(text_data=json.dumps({"type": "connect_to_chat", "payload": payload}))
 
     async def send_message(self, data: dict):
