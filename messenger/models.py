@@ -14,6 +14,7 @@ def message_attachments_upload(instance: "Message", filename: str) -> str:
 
 class Chat(models.Model):
     members = models.ManyToManyField(User, related_name="chats")
+    is_read = models.BooleanField(default=False)
     is_delete = models.BooleanField(default=False)
 
     class Meta:

@@ -28,10 +28,10 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = "id", "chat", "sender", "receiver", "body", "attachment", "time_added", "time_updated", "is_read"
 
     def get_time_added(self, instance: Message) -> dict:
-        return datetime_to_timezone(instance.time_added, self.context["user"].timezone)
+        return datetime_to_timezone(instance.time_added, self.context["user"].timezone, to_timesince=False)
 
     def get_time_updated(self, instance: Message) -> dict:
-        return datetime_to_timezone(instance.time_updated, self.context["user"].timezone)
+        return datetime_to_timezone(instance.time_updated, self.context["user"].timezone, to_timesince=False)
 
 
 class ChatSerializer(serializers.ModelSerializer):
@@ -40,7 +40,7 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = "id", "user", "last_message"
+        fields = "id", "user", "last_message", "is_read"
 
     def get_user(self, instance: Chat) -> dict:
         user = instance.members.exclude(id=self.context["user"].id)[0]

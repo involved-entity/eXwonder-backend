@@ -49,13 +49,13 @@ class MessengerConsumer(CommonConsumer):
                 await self.start_chat(data)
             case "send_message":
                 await self.send_message(data)
-            case "read_message":
-                message = await self.mark_as(data, mark_message, is_read=True)
+            case "read_chat":
+                chat = await self.mark_as(data, mark_chat, is_read=True)
                 await self.channel_layer.group_send(
-                    f"chat_{message.chat.pk}",  # noqa
+                    f"chat_{chat.pk}",  # noqa
                     {
-                        "type": "send_read_message",
-                        "message": message.id,
+                        "type": "send_read_chat",
+                        "chat": chat.id,
                     },
                 )
             case "delete_message":
@@ -82,16 +82,16 @@ class MessengerConsumer(CommonConsumer):
                     },
                 )
 
-    async def send_read_message(self, message):
-        await self.send(text_data=json.dumps({"type": "send_read_message", "message": message}))
+    async def send_read_chat(self, event):
+        await self.send(text_data=json.dumps({"type": "send_read_chat", "chat": event["chat"]}))
 
-    async def send_delete_message(self, message):
-        await self.send(text_data=json.dumps({"type": "send_delete_message", "message": message}))
+    async def send_delete_message(self, event):
+        await self.send(text_data=json.dumps({"type": "send_delete_message", "message": event["message"]}))
 
-    async def send_edit_message(self, message):
+    async def send_edit_message(self, event):
         from messenger.serializers import MessageSerializer
 
-        message = await database_sync_to_async(get_message)(message)
+        message = await database_sync_to_async(get_message)(event["message"])
         await self.send(
             text_data=json.dumps(
                 {
@@ -101,8 +101,8 @@ class MessengerConsumer(CommonConsumer):
             )
         )
 
-    async def send_delete_chat(self, chat):
-        await self.send(text_data=json.dumps({"type": "send_delete_chat", "chat": chat}))
+    async def send_delete_chat(self, event):
+        await self.send(text_data=json.dumps({"type": "send_delete_chat", "chat": event["chat"]}))
 
     async def connect_to_chats(self):
         from messenger.serializers import ChatSerializer
@@ -180,4 +180,4 @@ class MessengerConsumer(CommonConsumer):
 
     async def mark_as(self, data: dict, callback: typing.Callable, **kwargs):
         pk = data["id"]
-        await database_sync_to_async(callback)(pk, self.user, **kwargs)
+        return await database_sync_to_async(callback)(pk, self.user, **kwargs)

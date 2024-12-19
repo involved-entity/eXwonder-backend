@@ -58,22 +58,23 @@ def create_message(
 
 def mark_message(pk: int, user: "User", **kwargs):
     from messenger.models import Message
-    from messenger.serializers import MessageSerializer
 
-    message = Message.objects.filter(pk=pk)  # noqa
-    message.update(**kwargs)
-    return MessageSerializer(instance=message, context={"user": user}).data
+    message = Message.objects.get(pk=pk)  # noqa
+    for key, value in kwargs.items():
+        setattr(message, key, value)
+    message.save()
+    return message
 
 
 def mark_chat(pk: int, user: "User", **kwargs):
     from messenger.models import Chat
-    from messenger.serializers import ChatSerializer
 
-    chat = Chat.objects.filter(pk=pk)  # noqa
-    if "is_delete" in kwargs:
-        chat.messages.update(**kwargs)
-    chat.update(**kwargs)
-    return ChatSerializer(instance=chat, context={"user": user}).data
+    chat = Chat.objects.get(pk=pk)  # noqa
+    chat.messages.update(**kwargs)
+    for key, value in kwargs.items():
+        setattr(chat, key, value)
+    chat.save()
+    return chat
 
 
 def edit_message(message: int, body: str):
