@@ -47,5 +47,5 @@ class ChatSerializer(serializers.ModelSerializer):
         return UserDefaultSerializer(instance=user).data
 
     def get_last_message(self, instance: Chat) -> dict:
-        message = instance.messages.order_by("-time_added").first()  # noqa
+        message = instance.messages.filter(is_delete=False).order_by("-time_added").first()  # noqa
         return MessageSerializer(instance=message, context=self.context).data

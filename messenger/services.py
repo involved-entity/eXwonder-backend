@@ -16,6 +16,18 @@ def get_message(pk: int):
     return Message.objects.select_related("chat", "sender", "receiver").get(pk=pk)
 
 
+def get_new_last_message_for_message_chat(pk: int):
+    from messenger.models import Message
+
+    chat = Message.objects.select_related("chat").get(pk=pk).chat
+    return (
+        chat.messages.filter(is_delete=False)
+        .order_by("-time_added")
+        .select_related("chat", "sender", "receiver")
+        .first()
+    )
+
+
 def get_chats(user: "User") -> QuerySet:
     return list(user.chats.prefetch_related("members", "messages").filter(is_delete=False))
 
@@ -23,7 +35,7 @@ def get_chats(user: "User") -> QuerySet:
 def get_messages_in_chat(chat: int):
     from messenger.models import Chat
 
-    return list(Chat.objects.get(pk=chat).messages.select_related("sender", "receiver").filter())  # noqa
+    return list(Chat.objects.get(pk=chat).messages.select_related("sender", "receiver").filter(is_delete=False))  # noqa
 
 
 def create_chat(receiver: int, user: "User"):
@@ -59,7 +71,7 @@ def create_message(
 def mark_message(pk: int, user: "User", **kwargs):
     from messenger.models import Message
 
-    message = Message.objects.get(pk=pk)  # noqa
+    message = Message.objects.select_related("chat").get(pk=pk)  # noqa
     for key, value in kwargs.items():
         setattr(message, key, value)
     message.save()

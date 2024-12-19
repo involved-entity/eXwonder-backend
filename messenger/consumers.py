@@ -13,6 +13,7 @@ from messenger.services import (
     get_current_user,
     get_message,
     get_messages_in_chat,
+    get_new_last_message_for_message_chat,
     mark_chat,
     mark_message,
 )
@@ -86,7 +87,18 @@ class MessengerConsumer(CommonConsumer):
         await self.send(text_data=json.dumps({"type": "send_read_chat", "chat": event["chat"]}))
 
     async def send_delete_message(self, event):
-        await self.send(text_data=json.dumps({"type": "send_delete_message", "message": event["message"]}))
+        from messenger.serializers import MessageSerializer
+
+        new_last_message = await database_sync_to_async(get_new_last_message_for_message_chat)(event["message"])
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "send_delete_message",
+                    "message": event["message"],
+                    "last_message": MessageSerializer(instance=new_last_message, context={"user": self.user}).data,
+                }
+            )
+        )
 
     async def send_edit_message(self, event):
         from messenger.serializers import MessageSerializer
