@@ -16,16 +16,10 @@ def get_message(pk: int):
     return Message.objects.select_related("chat", "sender", "receiver").get(pk=pk)
 
 
-def get_new_last_message_for_message_chat(pk: int):
+def get_new_chat_entity(message_pk: int):
     from messenger.models import Message
 
-    chat = Message.objects.select_related("chat").get(pk=pk).chat
-    return (
-        chat.messages.filter(is_delete=False)
-        .order_by("-time_added")
-        .select_related("chat", "sender", "receiver")
-        .first()
-    )
+    return Message.objects.select_related("chat").prefetch_related("chat__members").get(pk=message_pk).chat
 
 
 def get_chats(user: "User") -> QuerySet:
@@ -65,7 +59,7 @@ def create_chat(receiver: int, user: "User"):
 def create_message(
     chat: int, receiver: int, body: str | None, attachment: typing.Any, attachment_name: str | None, user: "User"
 ):
-    from messenger.models import Message, Chat
+    from messenger.models import Chat, Message
 
     file = ContentFile(attachment, name=attachment_name) if attachment else None
 
@@ -80,10 +74,14 @@ def create_message(
 def mark_message(pk: int, user: "User", **kwargs):
     from messenger.models import Message
 
-    message = Message.objects.select_related("chat").get(pk=pk)  # noqa
+    message = Message.objects.select_related("chat").prefetch_related("chat__messages").get(pk=pk)  # noqa
     for key, value in kwargs.items():
         setattr(message, key, value)
     message.save()
+    if "is_delete" in kwargs:
+        new_last_message = message.chat.messages.filter(is_delete=False).order_by("-time_added").first()
+        message.chat.is_read = new_last_message.is_read
+        message.chat.save()
     return message
 
 

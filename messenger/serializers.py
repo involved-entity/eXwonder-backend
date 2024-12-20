@@ -1,5 +1,5 @@
-import urllib.parse
 import os
+import urllib.parse
 
 from django.conf import settings
 from rest_framework import serializers
