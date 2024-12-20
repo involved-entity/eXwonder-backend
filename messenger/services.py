@@ -65,12 +65,15 @@ def create_chat(receiver: int, user: "User"):
 def create_message(
     chat: int, receiver: int, body: str | None, attachment: typing.Any, attachment_name: str | None, user: "User"
 ):
-    from messenger.models import Message
+    from messenger.models import Message, Chat
 
     file = ContentFile(attachment, name=attachment_name) if attachment else None
 
+    chat = Chat.objects.get(pk=chat)
+    chat.is_read = False
+    chat.save()
     return Message.objects.create(  # noqa
-        chat_id=chat, sender=user, receiver_id=receiver, body=body, attachment=file
+        chat=chat, sender=user, receiver_id=receiver, body=body, attachment=file
     )
 
 
