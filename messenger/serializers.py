@@ -1,4 +1,5 @@
 import urllib.parse
+import os
 
 from django.conf import settings
 from rest_framework import serializers
@@ -13,7 +14,7 @@ class FileField(serializers.FileField):
         if not value:
             return None
         media_url = urllib.parse.urljoin(settings.HOST, settings.MEDIA_URL)
-        return {"link": urllib.parse.urljoin(media_url, str(value)), "name": str(value)}
+        return {"link": urllib.parse.urljoin(media_url, str(value)), "name": os.path.basename(str(value))}
 
 
 class MessageSerializer(serializers.ModelSerializer):
