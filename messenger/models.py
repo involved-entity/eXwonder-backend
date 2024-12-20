@@ -40,6 +40,7 @@ class Message(models.Model):
     attachment = models.FileField(upload_to=message_attachments_upload, null=True)
     time_added = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
+    is_edit = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
     is_delete = models.BooleanField(default=False)
 

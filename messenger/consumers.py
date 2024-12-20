@@ -181,7 +181,9 @@ class MessengerConsumer(CommonConsumer):
     async def edit_message(self, data: dict):
         message = data["message"]
         body = data["body"]
-        return await database_sync_to_async(edit_message)(message, body)
+        attachment = base64.b64decode(data["attachment"]) if data.get("attachment", None) else None
+        name = data.get("attachment_name", None)
+        return await database_sync_to_async(edit_message)(message, body, attachment, name)
 
     async def on_message(self, event: dict):
         from messenger.serializers import MessageSerializer

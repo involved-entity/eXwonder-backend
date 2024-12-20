@@ -63,7 +63,7 @@ def create_chat(receiver: int, user: "User"):
 
 
 def create_message(
-    chat: int, receiver: int, body: str | None, attachment: typing.Any, attachment_name: str, user: "User"
+    chat: int, receiver: int, body: str | None, attachment: typing.Any, attachment_name: str | None, user: "User"
 ):
     from messenger.models import Message
 
@@ -95,10 +95,14 @@ def mark_chat(pk: int, user: "User", **kwargs):
     return chat
 
 
-def edit_message(message: int, body: str):
+def edit_message(message: int, body: str, attachment: typing.Any, attachment_name: str | None):
     from messenger.models import Message
 
-    message = Message.objects.get(pk=message)  # noqa
+    message = Message.objects.select_related("chat").get(pk=message)  # noqa
     message.body = body
+    if attachment and attachment_name:
+        file = ContentFile(attachment, name=attachment_name)
+        message.attachment = file
+    message.is_edit = True
     message.save()
     return message
