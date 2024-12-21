@@ -35,8 +35,9 @@ class ExwonderUserAdmin(admin.ModelAdmin):
         "penultimate_login",
         "is_superuser",
         "is_active",
+        "is_online",
     )
-    readonly_fields = "penultimate_login", "last_login"
+    readonly_fields = "penultimate_login", "last_login", "is_online"
     list_display = "id", "username", "email", "date_joined", "is_superuser"
     list_display_links = "id", "username", "email"
     ordering = ("-date_joined",)

@@ -70,6 +70,7 @@ class ExwonderUser(AbstractBaseUser, PermissionsMixin):
         _("Staff status"),
         default=False,
     )
+    is_online = models.BooleanField(_("Is user online"), default=False)
 
     USERNAME_FIELD = "username"
     objects = ExwonderUserManager()

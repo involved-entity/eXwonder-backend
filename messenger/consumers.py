@@ -17,6 +17,7 @@ from messenger.services import (
     get_new_chat_entity,
     mark_chat,
     mark_message,
+    set_user_offline,
 )
 
 
@@ -29,11 +30,17 @@ class MessengerConsumer(CommonConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        if len(self.chats):
-            _ = (await self.channel_layer.group_discard(chat, self.channel_name) for chat in self.chats)
+        from users.serializers import UserDefaultSerializer
+
+        self.user = await database_sync_to_async(set_user_offline)(self.user)
+        for chat in self.chats:
+            await self.channel_layer.group_send(
+                chat, {"type": "user_offline", "user": UserDefaultSerializer(instance=self.user).data}
+            )
+            await self.channel_layer.group_discard(chat, self.channel_name)
 
     async def create_group(self, user_id: int):
-        self.user = await database_sync_to_async(get_current_user)(user_id)
+        self.user = await database_sync_to_async(get_current_user)(user_id, True)
         await self.channel_layer.group_add(f"user_{self.user.id}_messenger", self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
@@ -121,18 +128,30 @@ class MessengerConsumer(CommonConsumer):
 
     async def connect_to_chats(self):
         from messenger.serializers import ChatSerializer
+        from users.serializers import UserDefaultSerializer
 
         chats = await database_sync_to_async(get_chats)(self.user)
 
         for chat in chats:
             self.chats.append(f"chat_{chat.id}")
             await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
+            await self.channel_layer.group_send(
+                f"chat_{chat.id}", {"type": "user_online", "user": UserDefaultSerializer(instance=self.user).data}
+            )
 
         payload = await database_sync_to_async(
             lambda: ChatSerializer(chats, many=True, context={"user": self.user}).data
         )()
 
         await self.send(text_data=json.dumps({"type": "connect_to_chats", "payload": payload}))
+
+    async def user_online(self, event):
+        if self.user.id != event["user"]["id"]:
+            await self.send(text_data=json.dumps({"type": "user_online", "user": event["user"]}))
+
+    async def user_offline(self, event):
+        if self.user.id != event["user"]["id"]:
+            await self.send(text_data=json.dumps({"type": "user_offline", "user": event["user"]}))
 
     async def get_chat_history(self, data: dict):
         from messenger.serializers import MessageSerializer

@@ -26,7 +26,7 @@ class UserDefaultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "id", "username", "avatar"
+        fields = "id", "username", "avatar", "is_online"
 
 
 class UserCustomSerializer(serializers.ModelSerializer):

@@ -5,9 +5,19 @@ from django.core.files.base import ContentFile
 from django.db.models import Q, QuerySet
 
 
-def get_current_user(user_id: int):
+def get_current_user(user_id: int, set_online: bool = False):
     User = get_user_model()
-    return User.objects.get(pk=user_id)
+    user = User.objects.get(pk=user_id)
+    if set_online:
+        user.is_online = True
+        user.save()
+    return user
+
+
+def set_user_offline(user: "User"):
+    user.is_online = False
+    user.save()
+    return user
 
 
 def get_message(pk: int):
