@@ -73,7 +73,7 @@ class PostRequestSerializer(serializers.ModelSerializer):
             post_images = extract_post_images_from_request_data(post, self.context["request"].data)
             post_images = PostImage.objects.bulk_create(post_images)  # noqa
             if len(tags):
-                tags = get_or_create_tags(tags.split(","))
+                tags = get_or_create_tags(list(set(tags.split(","))))
                 post.tags.add(*tags)
 
         make_center_crop.apply_async(args=[str(post_images[0].image), PathImageTypeEnum.POST], queue="high_priority")
