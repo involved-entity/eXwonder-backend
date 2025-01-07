@@ -222,4 +222,4 @@ class MessengerConsumer(CommonConsumer):
 
     async def mark_as(self, data: dict, callback: typing.Callable, **kwargs):
         pk = data["id"]
-        return await database_sync_to_async(callback)(pk, self.user, **kwargs)
+        return await database_sync_to_async(callback)(pk, **kwargs)

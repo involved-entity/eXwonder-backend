@@ -2,10 +2,10 @@ import typing
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 
 
-def get_current_user(user_id: int, set_online: bool = False):
+def get_current_user(user_id: int, set_online: bool = False) -> "User":
     User = get_user_model()
     user = User.objects.get(pk=user_id)
     if set_online:
@@ -14,41 +14,41 @@ def get_current_user(user_id: int, set_online: bool = False):
     return user
 
 
-def set_user_offline(user: "User"):
+def set_user_offline(user: "User") -> "User":
     user.is_online = False
     user.save()
     return user
 
 
-def get_message(pk: int):
+def get_message(pk: int) -> "Message":
     from messenger.models import Message
 
-    return Message.objects.select_related("chat", "sender", "receiver").get(pk=pk)
+    return Message.objects.select_related("chat", "sender", "receiver").get(pk=pk)  # noqa
 
 
-def get_new_chat_entity(message_pk: int):
+def get_new_chat_entity(message_pk: int) -> "Chat":
     from messenger.models import Message
 
-    return Message.objects.select_related("chat").prefetch_related("chat__members").get(pk=message_pk).chat
+    return Message.objects.select_related("chat").prefetch_related("chat__members").get(pk=message_pk).chat  # noqa
 
 
-def get_chats(user: "User") -> QuerySet:
+def get_chats(user: "User") -> list["Chat"]:
     return list(user.chats.prefetch_related("members", "messages").filter(is_delete=False))
 
 
-def get_chat(pk: int):
+def get_chat(pk: int) -> "Chat":
     from messenger.models import Chat
 
-    return Chat.objects.prefetch_related("members", "messages").get(pk=pk)
+    return Chat.objects.prefetch_related("members", "messages").get(pk=pk)  # noqa
 
 
-def get_messages_in_chat(chat: int):
+def get_messages_in_chat(chat: int) -> list["Messages"]:
     from messenger.models import Chat
 
     return list(Chat.objects.get(pk=chat).messages.select_related("sender", "receiver").filter(is_delete=False))  # noqa
 
 
-def create_chat(receiver: int, user: "User"):
+def create_chat(receiver: int, user: "User") -> "Chat":
     from messenger.models import Chat
 
     User = get_user_model()  # noqa
@@ -68,7 +68,7 @@ def create_chat(receiver: int, user: "User"):
 
 def create_message(
     chat: int, receiver: int, body: str | None, attachment: typing.Any, attachment_name: str | None, user: "User"
-):
+) -> "Message":
     from messenger.models import Chat, Message
 
     file = ContentFile(attachment, name=attachment_name) if attachment else None
@@ -81,7 +81,7 @@ def create_message(
     )
 
 
-def mark_message(pk: int, user: "User", **kwargs):
+def mark_message(pk: int, **kwargs) -> "Message":
     from messenger.models import Message
 
     message = Message.objects.select_related("chat").prefetch_related("chat__messages").get(pk=pk)  # noqa
@@ -96,7 +96,7 @@ def mark_message(pk: int, user: "User", **kwargs):
     return message
 
 
-def mark_chat(pk: int, user: "User", **kwargs):
+def mark_chat(pk: int, **kwargs) -> "Chat":
     from messenger.models import Chat
 
     chat = Chat.objects.get(pk=pk)  # noqa
@@ -107,7 +107,7 @@ def mark_chat(pk: int, user: "User", **kwargs):
     return chat
 
 
-def edit_message(message: int, body: str, attachment: typing.Any, attachment_name: str | None):
+def edit_message(message: int, body: str, attachment: typing.Any, attachment_name: str | None) -> "Message":
     from messenger.models import Message
 
     message = Message.objects.select_related("chat").get(pk=message)  # noqa
