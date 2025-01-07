@@ -1,3 +1,5 @@
+import json
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -10,6 +12,9 @@ class CommonConsumer(AsyncWebsocketConsumer):
         token = await database_sync_to_async(self.check_token)(token)
         if token:
             await self.create_group(user_id)
+            await self.send(text_data=json.dumps({"authenticated": True}))
+        else:
+            await self.send(text_data=json.dumps({"authenticated": False}))
 
     def check_token(self, token: str):
         from rest_framework.authtoken.models import Token

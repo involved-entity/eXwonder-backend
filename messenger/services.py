@@ -90,8 +90,9 @@ def mark_message(pk: int, user: "User", **kwargs):
     message.save()
     if "is_delete" in kwargs:
         new_last_message = message.chat.messages.filter(is_delete=False).order_by("-time_added").first()
-        message.chat.is_read = new_last_message.is_read
+        message.chat.is_read = new_last_message.is_read if new_last_message else True
         message.chat.save()
+
     return message
 
 

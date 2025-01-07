@@ -161,7 +161,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
             )
 
         return Response(
-            {"detail": "This 2FA code is invalid. Regenerate it can help you.", "code": "CODE_INVALID"},
+            {"detail": "This 2FA code is invalid", "code": "CODE_INVALID"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

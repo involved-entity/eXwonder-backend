@@ -32,6 +32,9 @@ class MessengerConsumer(CommonConsumer):
     async def disconnect(self, close_code):
         from users.serializers import UserDefaultSerializer
 
+        if not hasattr(self, "user"):
+            return
+
         self.user = await database_sync_to_async(set_user_offline)(self.user)
         for chat in self.chats:
             await self.channel_layer.group_send(
@@ -69,6 +72,7 @@ class MessengerConsumer(CommonConsumer):
                 )
             case "delete_message":
                 message = await self.mark_as(data, mark_message, is_delete=True)
+                await self.send(text_data=json.dumps({"success": True}))
                 await self.channel_layer.group_send(
                     f"chat_{message.chat.pk}",  # noqa
                     {
@@ -78,11 +82,13 @@ class MessengerConsumer(CommonConsumer):
                 )
             case "edit_message":
                 message = await self.edit_message(data)
+                await self.send(text_data=json.dumps({"success": True}))
                 await self.channel_layer.group_send(
                     f"chat_{message.chat.id}", {"type": "send_edit_message", "message": message.id}
                 )
             case "delete_chat":
                 chat = await self.mark_as(data, mark_chat, is_delete=True)
+                await self.send(text_data=json.dumps({"success": True}))
                 await self.channel_layer.group_send(
                     f"chat_{chat.pk}",  # noqa
                     {
@@ -191,6 +197,7 @@ class MessengerConsumer(CommonConsumer):
         attachment = base64.b64decode(data["attachment"]) if data.get("attachment", None) else None
         name = data.get("attachment_name", None)
         message = await database_sync_to_async(create_message)(chat_id, receiver, body, attachment, name, self.user)
+        await self.send(text_data=json.dumps({"success": True}))
         await self.channel_layer.group_send(
             f"chat_{chat_id}",
             {
