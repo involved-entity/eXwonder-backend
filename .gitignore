@@ -12,3 +12,4 @@ static/
 .python-version
 uv.lock
 test.py
+.coverage
