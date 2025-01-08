@@ -6,12 +6,13 @@
 
 <!-- TOC --><a name="exwonder-backend"></a>
 # eXwonder-backend
-__Backend__ часть онлайн хостинга картинок `eXwonder`, являющегося по функционалу урезанной версией `Instagram`. 
+__Backend__ часть полноценной социальной сети, основанной на картинках `eXwonder`, вдохновленной `Instagram`. 
 Код написан на Python фреймворке __[Django REST Framework](https://www.djangoproject.com/)__, использует __[PostgreSQL](https://www.postgresql.org/)__ как основную БД, 
 __[Redis](https://github.com/redis/redis)__ для кэширования, __[RabbitMQ](https://github.com/rabbitmq/rabbitmq-server)__ в качестве брокера сообщений, __[Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html)__ 
 для обработки очередей задач. Также применяется библиотека __[dj-rest-auth](https://github.com/iMerica/dj-rest-auth)__ для операций с аккаунтом 
 через REST API, к которому также имеется Swagger-схема, сгенерированная при помощи 
-__[drf-spectacular](https://github.com/tfranzel/drf-spectacular/)__. Сервер `Live-Time` уведомлений написан на __[Channels](https://github.com/django/channels)__, используемый линтер и форматер кода - __[ruff](https://github.com/astral-sh/ruff)__.
+__[drf-spectacular](https://github.com/tfranzel/drf-spectacular/)__. Сервер `Live-Time` уведомлений и мессенджер написаны на __[Channels](https://github.com/django/channels)__, используемый линтер 
+и форматер кода - __[ruff](https://github.com/astral-sh/ruff)__.
 
 У проекта есть __[Frontend клиент](https://github.com/waflawe/eXwonder-frontend/)__.
 <!-- TOC --><a name="installation"></a>
@@ -39,11 +40,13 @@ uv run python manage.py migrate
 ```cmd
 ./scripts/run.sh
 ```
-7. В третем запускаем сервер уведомлений:
+7. В третем запускаем сервер уведомлений и мессенджер:
 ```cmd
-./scripts/notifications.sh
+./scripts/asgi.sh
 ```
-8. Готово. API будет доступно по адресу: `http://localhost:8000/api/v1/`, а документация к нему - `http://localhost:8000/api/v1/schema/docs/`. Сервер `WebSocket` уведомлений будет расположен на `ws://localhost:8001/`.
+8. Готово. API будет доступно по адресу: `http://localhost:8000/api/v1/`, а документация к нему - 
+`http://localhost:8000/api/v1/schema/docs/`. Сервер `WebSocket` уведомлений будет расположен на 
+`ws://localhost:8001/`, а мессенджер - `ws://localhost:8001/messenger/`.
 <!-- TOC --><a name="description"></a>
 ## Краткое описание функционала
 1. Создание аккаунта, вход, сброс пароля, 2-х факторная аутентификация, изменение пароля аккаунта.
@@ -54,8 +57,9 @@ uv run python manage.py migrate
 6. Страница с рекоммендациями, последними добавленными и самыми залайканными постами.
 7. Страница с сохраненными постами.
 8. Полноценные `Live-Time` `WebSocket` уведомления.
-9. Глобальный поиск аккаунтов.
-10. Кастомизация аккаунта (временная зона, 2FA, почта для сброса пароля, аватарка, имя, описание). 
+9. Полноценный `Live-Time` `WebSocket` мессенджер.
+10. Глобальный поиск аккаунтов.
+11. Кастомизация аккаунта (временная зона, 2FA, почта для сброса пароля, аватарка, имя, описание). 
 <!-- TOC --><a name="screenshots"></a>
 ## Скриншоты из frontend клиента
 Доступны [здесь](https://github.com/waflawe/eXwonder-frontend/blob/main/README.md).
