@@ -104,6 +104,7 @@ class PostResponseSerializer(serializers.ModelSerializer):
             "time_added",
             "images",
             "tags",
+            "pinned",
             "likes_count",
             "comments_count",
             "is_liked",

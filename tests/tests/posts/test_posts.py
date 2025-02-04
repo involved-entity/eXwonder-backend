@@ -20,6 +20,7 @@ POST_NEEDED_FIELDS = (
     "time_added",
     "images",
     "tags",
+    "pinned",
     "likes_count",
     "comments_count",
     "is_liked",
