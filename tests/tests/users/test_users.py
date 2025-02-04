@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
+from users.models import ExwonderUser
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -116,6 +117,7 @@ class TestUsersUpdate(GenericTest):
             "description": "test desc",
             "is_2fa_enabled": True,
             "is_private": True,
+            "comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS,
         }
         return (
             client.patch(reverse_lazy(self.endpoint_update), data=data),
@@ -137,6 +139,7 @@ class TestUsersUpdate(GenericTest):
         assert content["user"]["timezone"] == user.timezone
         assert content["user"]["is_2fa_enabled"] == user.is_2fa_enabled
         assert content["user"]["is_private"] == user.is_private
+        assert content["user"]["comments_private_status"] == user.comments_private_status
         return content
 
 
