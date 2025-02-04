@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
 
 User = get_user_model()
 
@@ -34,6 +35,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, related_name="posts", on_delete=models.CASCADE)
     signature = models.CharField(max_length=512, default="")
     tags = models.ManyToManyField("Tag", related_name="posts", blank=True)
+    pinned = models.BooleanField(default=False)
     time_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -45,6 +47,12 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.pk} post."
+
+    def clean(self):
+        if self.pinned:
+            pinned_count = Post.objects.filter(author=self.author, pinned=True).count()
+            if pinned_count >= 3:
+                raise serializers.ValidationError({"pinned": "One author must have no more than 3 pinned posts."})
 
 
 class Tag(models.Model):

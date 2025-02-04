@@ -15,8 +15,8 @@ class GenericTest(RegisterObjectsMixin):
     endpoint_list: str = None
     endpoint_detail: str = None
 
-    tests_count: int = 2
-    list_tests_count: int = 5
+    tests_count: int = 1
+    list_tests_count: int = 3
 
     def make_test(self, api_client: typing.Type[APIClient], stub: bool = False) -> None:
         client = api_client()

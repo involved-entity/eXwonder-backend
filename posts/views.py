@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -249,3 +250,25 @@ class SavedViewSet(CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelM
         instance = Saved.objects.filter(owner=request.user, post=get_object_or_404(Post, pk=request.data["post_id"]))
         if not instance.exists():
             super().perform_create(request, serializer)
+
+
+class PinPostsViewSet(viewsets.GenericViewSet):
+    lookup_url_kwarg = "pk"
+    permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
+
+    @action(methods=["post"], detail=True, url_name="pin")
+    def pin(self, request: Request, pk: int) -> Response:
+        post = Post.objects.get(pk=pk)
+        self.check_object_permissions(request, post)
+        post.pinned = True
+        post.full_clean()
+        post.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=["post"], detail=True, url_name="unpin")
+    def unpin(self, request: Request, pk: int) -> Response:
+        post = Post.objects.get(pk=pk)
+        post.pinned = False
+        post.full_clean()
+        post.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
