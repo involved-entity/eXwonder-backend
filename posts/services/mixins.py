@@ -15,7 +15,7 @@ class CreateModelMixin(mixins.CreateModelMixin):
         super().__init__(*args, **kwargs)
         self.entity_field = self.entity_model.__name__.lower()
 
-    def __get_and_validate_post_id(self, request: Request) -> int:
+    def get_and_validate_post_id(self, request: Request) -> int:
         if (not request.data.get(f"{self.entity_field}_id")) or (int(request.data.get(f"{self.entity_field}_id")) < 1):
             raise serializers.ValidationError()
         return request.data[f"{self.entity_field}_id"]
@@ -27,7 +27,7 @@ class CreateModelMixin(mixins.CreateModelMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, request: Request, serializer: serializers.ModelSerializer) -> None:  # noqa
-        entity_pk = self.__get_and_validate_post_id(request)
+        entity_pk = self.get_and_validate_post_id(request)
         serializer.save(
             **{self.author_field: request.user},
             **{self.entity_field: get_object_or_404(self.entity_model, pk=entity_pk)},

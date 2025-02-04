@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,6 +28,7 @@ from posts.services import (
     filter_posts_queryset_by_top,
     get_full_annotated_posts_queryset,
 )
+from users.models import ExwonderUser
 from users.serializers import DetailedCodeSerializer
 
 User = get_user_model()
@@ -182,6 +183,21 @@ class CommentViewSet(CreateModelMixin, mixins.ListModelMixin, mixins.DestroyMode
             return annotate_likes_count_and_is_liked_comments_queryset(self.request, queryset)
         elif self.action == "destroy":
             return Comment.objects.filter()  # noqa
+
+    def perform_create(self, request: Request, serializer: serializers.ModelSerializer) -> None:
+        post_id = self.get_and_validate_post_id(request)
+        author = Post.objects.select_related("author").get(pk=post_id).author
+
+        match author.comments_private_status:
+            case ExwonderUser.CommentsPrivateStatus.FOLLOWERS:
+                if not author.followers.select_related("follower").filter(follower=request.user).exists():
+                    raise serializers.ValidationError(
+                        "You can leave your comment here only if you are follower of author of this post."
+                    )
+            case ExwonderUser.CommentsPrivateStatus.NONE:
+                raise serializers.ValidationError("You cant leave comments to posts of this author.")
+
+        super().perform_create(request, serializer)
 
 
 @extend_schema_view(

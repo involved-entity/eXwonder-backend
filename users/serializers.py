@@ -76,6 +76,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "timezone",
             "is_2fa_enabled",
             "is_private",
+            "comments_private_status",
         )
         extra_kwargs = {
             "password": {"write_only": True},
@@ -83,6 +84,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "avatar": {"required": False},
             "timezone": {"required": False},
             "is_private": {"required": False},
+            "comments_private_status": {"required": False},
         }
 
     def validate_timezone(self, value):
@@ -115,6 +117,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
         instance.is_private = validated_data.get("is_private", instance.is_private)
+        instance.comments_private_status = validated_data.get(
+            "comments_private_status", instance.comments_private_status
+        )
 
         if not validated_data.get("email") or len(validated_data.get("email")) == 0:
             instance.email = email_before_update

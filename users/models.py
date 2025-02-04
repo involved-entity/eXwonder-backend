@@ -46,6 +46,11 @@ class ExwonderUserManager(BaseUserManager):
 
 
 class ExwonderUser(AbstractBaseUser, PermissionsMixin):
+    class CommentsPrivateStatus(models.TextChoices):
+        EVERYONE = "E", _("Everyone")
+        FOLLOWERS = "F", _("Followers")
+        NONE = "N", _("No one")
+
     username = models.CharField(
         verbose_name=_("Username"),
         max_length=16,
@@ -66,6 +71,9 @@ class ExwonderUser(AbstractBaseUser, PermissionsMixin):
     penultimate_login = models.DateTimeField(verbose_name=_("Penultimate login"), blank=True, null=True)
     is_2fa_enabled = models.BooleanField(verbose_name=_("Is 2FA enabled"), default=False)
     is_private = models.BooleanField(verbose_name=_("Is account private"), default=False)
+    comments_private_status = models.CharField(
+        choices=CommentsPrivateStatus.choices, max_length=10, default=CommentsPrivateStatus.EVERYONE
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
         _("Staff status"),
