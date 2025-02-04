@@ -65,6 +65,7 @@ class ExwonderUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(verbose_name=_("Date joined"), auto_now_add=True)
     penultimate_login = models.DateTimeField(verbose_name=_("Penultimate login"), blank=True, null=True)
     is_2fa_enabled = models.BooleanField(verbose_name=_("Is 2FA enabled"), default=False)
+    is_private = models.BooleanField(verbose_name=_("Is account private"), default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
         _("Staff status"),

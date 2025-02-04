@@ -101,6 +101,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         instance.avatar = validated_data.get("avatar", instance.avatar)
         instance.timezone = validated_data.get("timezone", instance.timezone)
         instance.is_2fa_enabled = validated_data.get("is_2fa_enabled", instance.is_2fa_enabled)
+        instance.is_private = validated_data.get("is_private", instance.is_private)
 
         if not validated_data.get("email") or len(validated_data.get("email")) == 0:
             instance.email = email_before_update

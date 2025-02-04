@@ -103,7 +103,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
             query = self.request.query_params.get("search", "")
             if len(query) < 3:
                 return User.objects.none()
-            queryset = User.objects.filter(username__startswith=query)
+            queryset = User.objects.filter(username__startswith=query, is_private=False)
             return annotate_users_queryset(self.request.user, queryset)
 
         return self.queryset
