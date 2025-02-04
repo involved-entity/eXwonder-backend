@@ -50,22 +50,24 @@ class TestUsersSearch(AssertPaginatedResponseMixin, GenericTest):
 
     def __generate_random_search_users(self, users_count: int) -> typing.Tuple[typing.Any, ...]:
         return tuple(
-            self.User.stub(username="searchuser" + "".join(secrets.choice(string.ascii_letters) for _ in range(5)))
+            self.User.stub(username="searchu" + "".join(secrets.choice(string.digits) for _ in range(3)))
             for _ in range(users_count)
         )
 
     def case_test(self, client: APIClient, instance: User) -> Response:
         users = self.User.stub_batch(self.list_tests_count - 2)
-        users.extend(self.__generate_random_search_users(2))
+        search_users = self.__generate_random_search_users(2)
+        search_users[0].is_private = True
+        users.extend(search_users)
         self.register_users(client, self.list_tests_count, users=users)
         client.force_authenticate(instance)
-        return client.get(f"{reverse_lazy(self.endpoint_list)}?search=sea")
+        return client.get(f"{reverse_lazy(self.endpoint_list)}?search=searchu")
 
     def assert_case_test(self, response: Response, *args) -> None:
-        self.assert_paginated_response(response, 2)
+        self.assert_paginated_response(response, 1)
 
     def after_assert(self, client: APIClient, *args) -> None:
-        User.objects.filter(username__startswith="sea").delete()
+        User.objects.filter(username__startswith="searchu").delete()
 
 
 class TestUsersFull(AssertResponseMixin, GenericTest):
@@ -113,6 +115,7 @@ class TestUsersUpdate(GenericTest):
             "name": "yea, test",
             "description": "test desc",
             "is_2fa_enabled": True,
+            "is_private": True,
         }
         return (
             client.patch(reverse_lazy(self.endpoint_update), data=data),
@@ -133,6 +136,7 @@ class TestUsersUpdate(GenericTest):
         assert content["user"]["email"] == user.email
         assert content["user"]["timezone"] == user.timezone
         assert content["user"]["is_2fa_enabled"] == user.is_2fa_enabled
+        assert content["user"]["is_private"] == user.is_private
         return content
 
 

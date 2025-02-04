@@ -15,6 +15,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     username = factory.LazyFunction(lambda: faker.Faker().user_name()[:16])
     email = factory.LazyFunction(lambda: faker.Faker().email())
     password = factory.LazyFunction(lambda: faker.Faker().password())
+    is_private = False
 
 
 class PostFactory(factory.django.DjangoModelFactory):

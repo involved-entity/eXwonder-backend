@@ -65,12 +65,24 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "id", "username", "password", "email", "name", "description", "avatar", "timezone", "is_2fa_enabled"
+        fields = (
+            "id",
+            "username",
+            "password",
+            "email",
+            "name",
+            "description",
+            "avatar",
+            "timezone",
+            "is_2fa_enabled",
+            "is_private",
+        )
         extra_kwargs = {
             "password": {"write_only": True},
             "email": {"required": False},
             "avatar": {"required": False},
             "timezone": {"required": False},
+            "is_private": {"required": False},
         }
 
     def validate_timezone(self, value):
@@ -86,6 +98,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             email=validated_data.get("email", None),
             avatar=validated_data.get("avatar", settings.DEFAULT_USER_AVATAR_PATH),
             timezone=validated_data.get("timezone", settings.DEFAULT_USER_TIMEZONE),
+            is_private=validated_data.get("is_private", False),
         )
         user.set_password(validated_data["password"])
         user.save()

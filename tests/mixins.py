@@ -55,6 +55,7 @@ class RegisterUsersMixin(CheckUserDataMixin, ProxyFactories):
             "username": user.username,
             "email": user.email,
             "password": user.password,
+            "is_private": user.is_private or False,
         }
 
     def get_validated_content(self, client: APIClient, data: typing.Dict) -> typing.Dict:
