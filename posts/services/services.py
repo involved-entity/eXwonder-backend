@@ -66,28 +66,32 @@ def annotate_can_comment_posts_queryset(
     request: Request, queryset: QuerySet, annotated_field_prefix: typing.Optional[str] = None
 ) -> QuerySet:
     prefix = f"{annotated_field_prefix}__" if annotated_field_prefix else ""
-    follower_exists = Follow.objects.filter(following=OuterRef("author"), follower=request.user)
+    follower_exists = Follow.objects.filter(following=OuterRef(prefix + "author"), follower=request.user)
 
-    queryset.annotate(
+    return queryset.annotate(
         can_comment=Case(
             When(
                 **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.EVERYONE},
                 then=Value(True),
             ),
             When(
-                **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS},
-                then=When(Exists(follower_exists), then=Value(True)),
+                Q(Exists(follower_exists))
+                & Q(**{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS}),
+                then=Value(True),
+            ),
+            When(
+                ~Q(Exists(follower_exists))
+                & Q(**{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS}),
+                then=Value(False),
             ),
             When(
                 **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.NONE},
                 then=Value(False),
             ),
             default=Value(False),
-            output_field=BooleanField,
+            output_field=BooleanField(),
         )
     )
-
-    return queryset
 
 
 def annotate_likes_and_comments_count_posts_queryset(

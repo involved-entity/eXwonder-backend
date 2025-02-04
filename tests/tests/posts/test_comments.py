@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from posts.models import Comment, Post
-from tests import AssertPaginatedResponseMixin, GenericTest
+from tests import AssertPaginatedResponseMixin, GenericTest, change_user_comments_private_status
 from users.models import ExwonderUser
 
 User = get_user_model()
@@ -28,7 +28,6 @@ class TestCommentsCreation(GenericTest):
 
 class TestCommentsPrivateStatus(GenericTest):
     endpoint_list = "users:followings-list"
-    endpoint_update = "users:account-update"
 
     def test_comments_private_status(self, api_client):
         super().make_test(api_client)
@@ -37,14 +36,9 @@ class TestCommentsPrivateStatus(GenericTest):
         user = self.register_users(client, 1)[0]
         post = self.register_post(client, instance)
 
-        data = {"comments_private_status": ExwonderUser.CommentsPrivateStatus.EVERYONE}
-        client.force_authenticate(instance)
-        client.patch(reverse_lazy(self.endpoint_update), data=data)
         self.register_comment(client, user, post=post)
 
-        data = {"comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS}
-        client.force_authenticate(instance)
-        client.patch(reverse_lazy(self.endpoint_update), data=data)
+        change_user_comments_private_status(client, instance, ExwonderUser.CommentsPrivateStatus.FOLLOWERS)
         self.register_comment(client, user, post=post, response_status=status.HTTP_400_BAD_REQUEST)
 
         client.force_authenticate(user)
@@ -52,9 +46,7 @@ class TestCommentsPrivateStatus(GenericTest):
         assert response.status_code == status.HTTP_201_CREATED
         self.register_comment(client, user, post=post)
 
-        data = {"comments_private_status": ExwonderUser.CommentsPrivateStatus.NONE}
-        client.force_authenticate(instance)
-        client.patch(reverse_lazy(self.endpoint_update), data=data)
+        change_user_comments_private_status(client, instance, ExwonderUser.CommentsPrivateStatus.NONE)
         self.register_comment(client, user, post=post, response_status=status.HTTP_400_BAD_REQUEST)
 
 

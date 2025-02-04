@@ -1,3 +1,4 @@
+import json
 import typing
 
 import pytest
@@ -8,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from posts.models import Post
-from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest
+from tests import AssertPaginatedResponseMixin, AssertResponseMixin, GenericTest, change_user_comments_private_status
+from users.models import ExwonderUser
 
 User = get_user_model()
 pytestmark = [pytest.mark.django_db]
@@ -83,6 +85,37 @@ class TestPostsRetrieve(AssertResponseMixin, GenericTest):
         assert content["author"]["id"] == args[1].id
         assert content["signature"] == args[0].signature
         assert len(content["images"]) == 2
+
+
+class TestPostsCanCommentField(AssertResponseMixin, GenericTest):
+    endpoint_list = "users:followings-list"
+    endpoint_detail = "posts:posts-detail"
+
+    def __check_can_comment(self, client: APIClient, post_id: int, value: bool):
+        response = client.get(reverse_lazy(self.endpoint_detail, kwargs={"id": post_id}))
+        content = json.loads(response.content)
+        assert content["can_comment"] == value
+
+    def test_posts_can_comment_field(self, api_client):
+        super().make_test(api_client)
+
+    def case_test(self, client: APIClient, instance: User) -> None:
+        user = self.register_users(client, 1)[0]
+        post = self.register_post(client, instance)
+
+        client.force_authenticate(user)
+        self.__check_can_comment(client, post.id, True)
+
+        change_user_comments_private_status(client, instance, ExwonderUser.CommentsPrivateStatus.FOLLOWERS)
+        self.__check_can_comment(client, post.id, False)
+
+        client.force_authenticate(user)
+        response = client.post(reverse_lazy(self.endpoint_list), data={"following": instance.pk})
+        assert response.status_code == status.HTTP_201_CREATED
+        self.__check_can_comment(client, post.id, True)
+
+        change_user_comments_private_status(client, instance, ExwonderUser.CommentsPrivateStatus.NONE)
+        self.__check_can_comment(client, post.id, False)
 
 
 class TestPostsDelete(GenericTest):
