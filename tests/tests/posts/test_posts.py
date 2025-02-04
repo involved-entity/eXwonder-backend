@@ -23,8 +23,10 @@ POST_NEEDED_FIELDS = (
     "pinned",
     "likes_count",
     "comments_count",
+    "can_comment",
     "is_liked",
     "is_commented",
+    "is_saved",
 )
 
 

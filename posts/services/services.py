@@ -4,12 +4,13 @@ import pytz
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db.models import Count, F, Q, QuerySet
+from django.db.models import BooleanField, Case, Count, Exists, F, OuterRef, Q, QuerySet, Value, When
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.request import Request
 
 from posts.models import Post, PostImage, Tag
+from users.models import ExwonderUser, Follow
 
 User = get_user_model()
 
@@ -61,6 +62,34 @@ def annotate_with_user_data_posts_queryset(
     return queryset.annotate(**annotate)
 
 
+def annotate_can_comment_posts_queryset(
+    request: Request, queryset: QuerySet, annotated_field_prefix: typing.Optional[str] = None
+) -> QuerySet:
+    prefix = f"{annotated_field_prefix}__" if annotated_field_prefix else ""
+    follower_exists = Follow.objects.filter(following=OuterRef("author"), follower=request.user)
+
+    queryset.annotate(
+        can_comment=Case(
+            When(
+                **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.EVERYONE},
+                then=Value(True),
+            ),
+            When(
+                **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.FOLLOWERS},
+                then=When(Exists(follower_exists), then=Value(True)),
+            ),
+            When(
+                **{prefix + "author__comments_private_status": ExwonderUser.CommentsPrivateStatus.NONE},
+                then=Value(False),
+            ),
+            default=Value(False),
+            output_field=BooleanField,
+        )
+    )
+
+    return queryset
+
+
 def annotate_likes_and_comments_count_posts_queryset(
     queryset: QuerySet, annotated_field_prefix: typing.Optional[str] = None
 ) -> QuerySet:
@@ -83,6 +112,7 @@ def get_full_annotated_posts_queryset(
     request: Request, queryset: QuerySet, annotated_field_prefix: typing.Optional[str] = None
 ) -> QuerySet:
     queryset = annotate_likes_and_comments_count_posts_queryset(queryset, annotated_field_prefix)
+    queryset = annotate_can_comment_posts_queryset(request, queryset, annotated_field_prefix)
     return annotate_with_user_data_posts_queryset(request, queryset, annotated_field_prefix)
 
 
@@ -119,6 +149,7 @@ def filter_posts_queryset_by_recent(request: Request, queryset: QuerySet) -> Que
     if not res_queryset:
         res_queryset = annotate_likes_and_comments_count_posts_queryset(queryset.order_by("-id")[:50])
         cache.set(key, res_queryset, settings.POSTS_RECENT_TOP_CACHE_TIME)
+    res_queryset = annotate_can_comment_posts_queryset(request, res_queryset)
     res_queryset = annotate_with_user_data_posts_queryset(request, res_queryset)
     return res_queryset
 
@@ -129,6 +160,7 @@ def filter_posts_queryset_by_likes(request: Request, queryset):
     if not res_queryset:
         res_queryset = annotate_likes_and_comments_count_posts_queryset(queryset.order_by(F("likes_count").desc())[:50])
         cache.set(key, res_queryset)
+    res_queryset = annotate_can_comment_posts_queryset(request, res_queryset)
     res_queryset = annotate_with_user_data_posts_queryset(request, res_queryset)
     return res_queryset
 

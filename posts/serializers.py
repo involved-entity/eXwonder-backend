@@ -89,6 +89,7 @@ class PostResponseSerializer(serializers.ModelSerializer):
 
     likes_count = serializers.IntegerField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
+    can_comment = serializers.BooleanField(read_only=True)
     is_liked = serializers.BooleanField(read_only=True)
     is_commented = serializers.BooleanField(read_only=True)
     is_saved = serializers.BooleanField(read_only=True)
@@ -107,6 +108,7 @@ class PostResponseSerializer(serializers.ModelSerializer):
             "pinned",
             "likes_count",
             "comments_count",
+            "can_comment",
             "is_liked",
             "is_commented",
             "is_saved",
