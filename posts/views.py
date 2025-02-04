@@ -252,6 +252,28 @@ class SavedViewSet(CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelM
             super().perform_create(request, serializer)
 
 
+@extend_schema_view(
+    pin=extend_schema(
+        request=None,
+        responses={
+            status.HTTP_204_NO_CONTENT: None,
+            status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+            status.HTTP_401_UNAUTHORIZED: DetailedCodeSerializer,
+            status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
+        },
+        description="Endpoint to pin your post.",
+    ),
+    unpin=extend_schema(
+        request=None,
+        responses={
+            status.HTTP_204_NO_CONTENT: None,
+            status.HTTP_400_BAD_REQUEST: DetailedCodeSerializer,
+            status.HTTP_401_UNAUTHORIZED: DetailedCodeSerializer,
+            status.HTTP_403_FORBIDDEN: DetailedCodeSerializer,
+        },
+        description="Endpoint to unpin your post.",
+    ),
+)
 class PinPostsViewSet(viewsets.GenericViewSet):
     lookup_url_kwarg = "pk"
     permission_classes = permissions.IsAuthenticated, IsOwnerOrReadOnly
@@ -268,6 +290,7 @@ class PinPostsViewSet(viewsets.GenericViewSet):
     @action(methods=["post"], detail=True, url_name="unpin")
     def unpin(self, request: Request, pk: int) -> Response:
         post = Post.objects.get(pk=pk)
+        self.check_object_permissions(request, post)
         post.pinned = False
         post.full_clean()
         post.save()
