@@ -119,13 +119,15 @@ class RegisterLikeMixin(RegisterPostMixin):
 class RegisterCommentMixin(RegisterPostMixin):
     REGISTER_COMMENTS_ENDPOINT: typing.Final = "posts:comments-list"
 
-    def register_comment(self, client: APIClient, author: User, post: typing.Optional[Post] = None) -> Comment:
+    def register_comment(
+        self, client: APIClient, author: User, post: typing.Optional[Post] = None, response_status: int = None
+    ) -> Comment:
         post_id = post.id if post else self.register_post(client, author).pk  # noqa
         client.force_authenticate(author)
         data = {"post_id": post_id, "comment": self.Comment.stub().comment}
         response = client.post(reverse_lazy(self.REGISTER_COMMENTS_ENDPOINT), data=data)  # noqa
         client.force_authenticate()
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code == (response_status or status.HTTP_201_CREATED)
         return Comment.objects.first()  # noqa
 
 
