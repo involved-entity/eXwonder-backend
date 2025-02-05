@@ -50,11 +50,18 @@ def get_messages_in_chat(chat: int) -> list["Messages"]:
     return list(Chat.objects.get(pk=chat).messages.select_related("sender", "receiver").filter(is_delete=False))  # noqa
 
 
-def create_chat(receiver: int, user: "User") -> "Chat":
+def create_chat(receiver: int | str, user: "User") -> tuple["Chat", "User"]:
     from messenger.models import Chat
 
     User = get_user_model()  # noqa
-    removed_chat = Chat.objects.filter(Q(members__id=receiver) & Q(members__id=user.id))  # noqa
+    second_member = User.objects.filter(**{"pk" if isinstance(receiver, int) else "username": receiver})
+
+    if not len(second_member):
+        return None, None
+
+    second_member = second_member[0]
+
+    removed_chat = Chat.objects.filter(Q(members__id=second_member.id) & Q(members__id=user.id))  # noqa
 
     if removed_chat.exists():
         chat = removed_chat[0]
@@ -63,9 +70,9 @@ def create_chat(receiver: int, user: "User") -> "Chat":
         return chat
 
     chat = Chat.objects.create()  # noqa
-    members = User.objects.filter(pk__in={receiver, user.id})
+    members = User.objects.filter(pk__in={second_member.id, user.id})
     chat.members.add(*list(members))
-    return chat
+    return chat, second_member
 
 
 def create_message(

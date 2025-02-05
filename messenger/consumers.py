@@ -170,11 +170,19 @@ class MessengerConsumer(CommonConsumer):
     async def start_chat(self, data: dict):
         from messenger.serializers import ChatSerializer
 
-        receiver = data["receiver"]
-        chat = await database_sync_to_async(create_chat)(receiver, self.user)
+        chat, receiver = await database_sync_to_async(create_chat)(data["receiver"], self.user)
+
+        if not chat and not receiver:
+            await self.send(
+                text_data=json.dumps({"type": "chat_started", "payload": {"error_get_user": data["receiver"]}})
+            )
+            return
+
         self.chats.append(f"chat_{chat.id}")
         await self.channel_layer.group_add(f"chat_{chat.id}", self.channel_name)
-        await self.channel_layer.group_send(f"user_{receiver}_messenger", {"type": "connect_to_chat", "chat": chat.id})
+        await self.channel_layer.group_send(
+            f"user_{receiver.id}_messenger", {"type": "connect_to_chat", "chat": chat.id}
+        )
         payload = await database_sync_to_async(
             lambda: ChatSerializer(instance=chat, context={"user": self.user}).data
         )()
