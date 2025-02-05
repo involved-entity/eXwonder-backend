@@ -43,10 +43,6 @@ def get_user_login_token(user: User) -> str:
     return token.key
 
 
-def remove_user_token(user: User) -> None:
-    Token.objects.filter(user=user).delete()  # noqa
-
-
 def annotate_users_queryset(user: User, queryset: QuerySet, fields: typing.Optional[typing.List] = None) -> QuerySet:
     if not fields:
         fields = ["posts_count", "is_followed", "followers_count", "followings_count"]

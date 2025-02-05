@@ -15,6 +15,8 @@ def get_current_user(user_id: int, set_online: bool = False) -> "User":
 
 
 def set_user_offline(user: "User") -> "User":
+    User = get_user_model()
+    user = User.objects.get(pk=user.id)
     user.is_online = False
     user.save()
     return user

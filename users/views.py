@@ -29,7 +29,6 @@ from users.services import (
     annotate_users_queryset,
     get_user_login_token,
     make_2fa_authentication,
-    remove_user_token,
 )
 from users.tasks import send_2fa_code_mail_message
 
@@ -78,9 +77,6 @@ User = get_user_model()
             status.HTTP_400_BAD_REQUEST: None,
         },
         description="Endpoint to log in.",
-    ),
-    logout=extend_schema(
-        request=None, responses={status.HTTP_204_NO_CONTENT: None}, description="Endpoint to log out."
     ),
     two_factor_authentication=extend_schema(
         request=TwoFactorAuthenticationCodeSerializer,
@@ -136,11 +132,6 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
             )
 
         return Response({"token": get_user_login_token(user), "user_id": user.id}, status=status.HTTP_200_OK)
-
-    @action(methods=["get"], detail=False, url_name="logout", permission_classes=(permissions.IsAuthenticated,))
-    def logout(self, request: Request) -> Response:
-        remove_user_token(request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=["post"], detail=False, url_name="2fa", url_path="two-factor-authentication")
     def two_factor_authentication(self, request: Request) -> Response:
