@@ -299,7 +299,7 @@ class PinPostsViewSet(viewsets.GenericViewSet):
         post = Post.objects.get(pk=pk)
         self.check_object_permissions(request, post)
         post.pinned = True
-        post.full_clean()
+        post.clean()
         post.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -308,6 +308,6 @@ class PinPostsViewSet(viewsets.GenericViewSet):
         post = Post.objects.get(pk=pk)
         self.check_object_permissions(request, post)
         post.pinned = False
-        post.full_clean()
+        post.clean()
         post.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
