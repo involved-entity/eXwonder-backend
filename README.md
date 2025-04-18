@@ -14,13 +14,13 @@ __[Redis](https://github.com/redis/redis)__ для кэширования, __[Ra
 __[drf-spectacular](https://github.com/tfranzel/drf-spectacular/)__. Сервер `Live-Time` уведомлений и мессенджер написаны на __[Channels](https://github.com/django/channels)__, используемый линтер 
 и форматер кода - __[ruff](https://github.com/astral-sh/ruff)__.
 
-У проекта есть __[Frontend клиент](https://github.com/waflawe/eXwonder-frontend/)__.
+У проекта есть __[Frontend клиент](https://github.com/involved-entity/eXwonder-frontend/)__.
 <!-- TOC --><a name="installation"></a>
 ## Установка
 Перед установкой убедитесь, что у вас установлен менеджер пакетов `uv`, `Redis` и `RabbitMQ` (если вы хотите использовать его как брокер сообщений вместо `Redis`).
 1. Клонируем репозиторий:
 ```cmd
-git clone https://github.com/waflawe/eXwonder-backend.git
+git clone https://github.com/involved-entity/eXwonder-backend.git
 cd eXwonder-backend/
 ```
 2. Устанавливаем зависимости:
@@ -76,8 +76,8 @@ uv run python manage.py migrate
 		* Статус определения круга пользователей, способного оставлять комментарии к постам аккаунта
 <!-- TOC --><a name="screenshots"></a>
 ## Скриншоты из frontend клиента
-Доступны [здесь](https://github.com/waflawe/eXwonder-frontend/blob/main/README.md).
+Доступны [здесь](https://github.com/involved-entity/eXwonder-frontend/blob/main/README.md).
 <!-- TOC --><a name="license"></a>
 ## Лицензия
-У этого проекта [MIT лицензия](https://github.com/waflawe/eXwonder-backend/blob/main/LICENSE).
+У этого проекта [MIT лицензия](https://github.com/involved-entity/eXwonder-backend/blob/main/LICENSE).
 
